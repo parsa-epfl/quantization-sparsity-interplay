@@ -219,6 +219,7 @@ def main():
     set_seed(training_args.seed)
 
     # Initialize our dataset and prepare it for the 'image-classification' task.
+    ### TODO:check the dimensions of dataset and figure out how to convert it to bfp (which dims share expos)
     if data_args.dataset_name is not None:
         dataset = load_dataset(
             data_args.dataset_name,
@@ -350,8 +351,11 @@ def main():
             )
         # Set the validation transforms
         dataset["validation"].set_transform(val_transforms)
-
+    
+    ### TODO:dataset is finalized here. check the dimensions of dataset and figure out how to convert it to bfp (which dims share expos)
+    
     # Initalize our trainer
+    ### TODO: "Trainer lets us use our own optimizers, losses, learning rate schedulers, etc." You can call bfpoptim here
     trainer = Trainer(
         model=model,
         args=training_args,
