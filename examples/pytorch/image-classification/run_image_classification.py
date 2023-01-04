@@ -283,6 +283,12 @@ def main():
         use_auth_token=True if model_args.use_auth_token else None,
         ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
     )
+
+    
+    print('.................... model .........................')
+    print(model)
+
+    
     feature_extractor = AutoFeatureExtractor.from_pretrained(
         model_args.feature_extractor_name or model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
