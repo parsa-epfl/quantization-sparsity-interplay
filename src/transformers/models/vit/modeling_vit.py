@@ -37,6 +37,10 @@ from ...utils import (
 )
 from .configuration_vit import ViTConfig
 
+### BFP imports
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d
+from ...bfp import bfp_util
+
 
 logger = logging.get_logger(__name__)
 
@@ -148,6 +152,8 @@ class ViTPatchEmbeddings(nn.Module):
 
     def __init__(self, config):
         super().__init__()
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
         image_size, patch_size = config.image_size, config.patch_size
         num_channels, hidden_size = config.num_channels, config.hidden_size
 
@@ -159,6 +165,8 @@ class ViTPatchEmbeddings(nn.Module):
         self.num_channels = num_channels
         self.num_patches = num_patches
 
+        ### bfp layers
+        #self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
         self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = False) -> torch.Tensor:
@@ -180,6 +188,8 @@ class ViTPatchEmbeddings(nn.Module):
 class ViTSelfAttention(nn.Module):
     def __init__(self, config: ViTConfig) -> None:
         super().__init__()
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
                 f"The hidden size {config.hidden_size,} is not a multiple of the number of attention "
@@ -190,9 +200,10 @@ class ViTSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = nn.Linear(config.hidden_size, self.all_head_size, bias=config.qkv_bias)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size, bias=config.qkv_bias)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size, bias=config.qkv_bias)
+        ### bfp layers
+        self.query = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+        self.key = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+        self.value = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
@@ -245,7 +256,11 @@ class ViTSelfOutput(nn.Module):
 
     def __init__(self, config: ViTConfig) -> None:
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+
+        ### bfp layers
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
@@ -298,7 +313,11 @@ class ViTAttention(nn.Module):
 class ViTIntermediate(nn.Module):
     def __init__(self, config: ViTConfig) -> None:
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+
+        ### bfp layers
+        self.dense = BFPLinear(config.hidden_size, config.intermediate_size, **self.bfp_args)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -315,7 +334,11 @@ class ViTIntermediate(nn.Module):
 class ViTOutput(nn.Module):
     def __init__(self, config: ViTConfig) -> None:
         super().__init__()
-        self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+
+        ### bfp layers
+        self.dense = BFPLinear(config.intermediate_size, config.hidden_size, **self.bfp_args)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
@@ -604,7 +627,11 @@ class ViTModel(ViTPreTrainedModel):
 class ViTPooler(nn.Module):
     def __init__(self, config: ViTConfig):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+
+        ### bfp layers
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states):
@@ -753,12 +780,15 @@ class ViTForMaskedImageModeling(ViTPreTrainedModel):
 class ViTForImageClassification(ViTPreTrainedModel):
     def __init__(self, config: ViTConfig) -> None:
         super().__init__(config)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
 
         self.num_labels = config.num_labels
         self.vit = ViTModel(config, add_pooling_layer=False)
 
         # Classifier head
-        self.classifier = nn.Linear(config.hidden_size, config.num_labels) if config.num_labels > 0 else nn.Identity()
+        ### bfp layers
+        self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args) if config.num_labels > 0 else nn.Identity()
 
         # Initialize weights and apply final processing
         self.post_init()

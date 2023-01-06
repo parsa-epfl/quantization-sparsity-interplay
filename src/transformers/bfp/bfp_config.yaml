@@ -1,0 +1,8 @@
+hbfp:
+  num_format: bfp 
+  rounding_mode: stoc
+  epsilon: 0.00000001
+  mant_bits: 7
+  weight_mant_bits: 15
+  bfp_tile_size: 8
+  device: gpu

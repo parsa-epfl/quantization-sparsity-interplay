@@ -150,7 +150,6 @@ from .utils import (
 )
 from .utils.generic import ContextManagers
 
-
 _is_native_cpu_amp_available = is_torch_greater_or_equal_than_1_10
 
 DEFAULT_CALLBACKS = [DefaultFlowCallback]
@@ -195,6 +194,11 @@ else:
 
 if TYPE_CHECKING:
     import optuna
+
+
+
+### Import bfp optimizer
+from .bfp.bfp_optim_lstm import BFPAdam
 
 logger = logging.get_logger(__name__)
 
@@ -1006,6 +1010,7 @@ class Trainer:
             optimizer = self.optimizer
         self.create_scheduler(num_training_steps=num_training_steps, optimizer=optimizer)
 
+    ### May need to add bfp (*TBC)
     def create_optimizer(self):
         """
         Setup the optimizer.
@@ -1139,6 +1144,10 @@ class Trainer:
             optimizer_cls = torch.optim.SGD
         elif args.optim == OptimizerNames.ADAGRAD:
             optimizer_cls = torch.optim.Adagrad
+        ### Set BFPAdam optimizer. You may need to add bfp_args later (*TBC)
+        elif args.optim == OptimizerNames.BFPADAM:
+            optimizer_cls = BFPAdam
+            optimizer_kwargs.update(adam_kwargs)
         else:
             raise ValueError(f"Trainer cannot instantiate unsupported optimizer: {args.optim}")
         return optimizer_cls, optimizer_kwargs
@@ -1639,6 +1648,7 @@ class Trainer:
 
         # Train!
         logger.info("***** Running training *****")
+        logger.info("***** Debug *****")
         logger.info(f"  Num examples = {num_examples}")
         logger.info(f"  Num Epochs = {num_train_epochs}")
         logger.info(f"  Instantaneous batch size per device = {args.per_device_train_batch_size}")

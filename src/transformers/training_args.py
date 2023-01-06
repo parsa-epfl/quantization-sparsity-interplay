@@ -57,6 +57,10 @@ if is_torch_available():
     import torch
     import torch.distributed as dist
 
+
+### Import bfp optimizer (can be included inside the if above *TBC)
+from .bfp.bfp_optim_lstm import BFPAdam
+
 if is_torch_tpu_available(check_device=False):
     import torch_xla.core.xla_model as xm
 
@@ -129,6 +133,7 @@ class OptimizerNames(ExplicitEnum):
     ADAMW_ANYPRECISION = "adamw_anyprecision"
     SGD = "sgd"
     ADAGRAD = "adagrad"
+    BFPADAM = "BFPAdam"
 
 
 @dataclass
@@ -1035,6 +1040,39 @@ class TrainingArguments:
         metadata={
             "help": "Which mode to use with `torch.compile`, passing one will trigger a model compilation.",
             "choices": ["default", "reduce-overhead", "max-autotune"],
+        },
+    )
+    ### BFP Arguments
+    num_format: str = field(
+        default='fp32',
+        metadata={
+            "help": "Number format for dot product operations",
+            "choices": ["fp32","bfp"],
+        },
+    )
+    rounding_mode: str = field(
+        default='stoc',
+        metadata={
+            "help": "Rounding mode for bfp",
+            "choices": ["stoc","determ"],
+        },
+    )
+    mant_bits: int = field(
+        default=8,
+        metadata={
+            "help": "Mantissa bits for bfp",
+        },
+    )
+    bfp_tile_size: int = field(
+        default=0,
+        metadata={
+            "help": "Tile size if using tiled bfp. 0 disables tiling",
+        },
+    )
+    weight_mant_bits: int = field(
+        default=15,
+        metadata={
+            "help": "Mantissa bits for weights bfp",
         },
     )
 
