@@ -34,7 +34,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from tqdm.auto import tqdm
+from numpy import save
+from pathlib import Path
+import sys
 
+class Hook():
+    def __init__(self, module, backward=False):
+        if backward==False:
+            self.hook = module.register_forward_hook(self.hook_fn)
+    def hook_fn(self, module, input, output):
+        self.input = input
+        self.output = output
+        self.module = module
+    def close(self):
+        self.hook.remove()
 
 # Integrations must be imported before ML frameworks:
 from .integrations import (  # isort: split
@@ -1764,7 +1777,19 @@ class Trainer:
 
             step = -1
             for step, inputs in enumerate(epoch_iterator):
-
+                '''
+                #SAVE TENSORS
+                names = []
+                _layers = []
+                def remove_sequential2(network):
+                    for name, layer in model.named_modules():
+                        if list(layer.children()) == []: # if leaf node, add it to list
+                            names.append(name)
+                            _layers.append(layer)
+                remove_sequential2(model)
+                hookF = [Hook(layer) for layer in _layers]
+                '''
+                
                 # Skip past any already trained steps if resuming training
                 if steps_trained_in_current_epoch > 0:
                     steps_trained_in_current_epoch -= 1
@@ -1790,6 +1815,47 @@ class Trainer:
                         tr_loss_step = self.training_step(model, inputs)
                 else:
                     tr_loss_step = self.training_step(model, inputs)
+
+                '''        
+                #SAVE TENSORS
+                threshold = 6.0
+                
+                #dirname = '/parsadata1/mixedprecision_hbfp/fp32distr/'+ str(args.local_index)
+                dirname = '/home/parsa/simla/sparsity/transformers_hbfp_sparsity/examples/pytorch/language-modeling/bert_tensors'
+                Path(dirname).mkdir(parents=True, exist_ok=True)
+
+                input_dist = {}
+                output_dist = {}
+                grad_dist = {}
+                weight_dist = {}
+
+                params = list(model.named_parameters())
+                #print(params)
+                for i in range(len(params)):
+                    param_name = params[i][0]
+                    if params[i][1].requires_grad and ('weight' in param_name):
+                        #print(f'param_name: {param_name}')
+                        weight_dist[param_name] = params[i][1]
+                        grad_dist[param_name] = params[i][1].grad
+                        #print(params[i][1])
+                        weight_outliers = torch.where(params[i][1] > threshold, 1, 0)
+                        grad_outliers = torch.where(params[i][1].grad > threshold, 1, 0)
+                        print(f'weight outliers: {torch.sum(weight_outliers)}')
+                        print(f'grad outliers: {torch.sum(grad_outliers)}')
+                        #save(dirname + '/' + param_name + '_weight.npy', params[i][1].cpu().detach().numpy())
+                        #save(dirname + '/' + param_name + '_grad.npy', params[i][1].grad.cpu().detach().numpy())
+
+                for n,h in zip(names,hookF):
+                    input_dist[n] = h.input
+                    output_dist[n] = h.output
+                    input_outliers = torch.where(h.input[0] > threshold, 1, 0)
+                    output_outliers = torch.where(h.output[0] > threshold, 1, 0)
+                    print(f'input outliers: {torch.sum(input_outliers)}')
+                    print(f'output outliers: {torch.sum(output_outliers)}')
+                    #print(f'n: {n} h:{h}')
+                    #save(dirname + '/' + n + '_input.npy', h.input[0].cpu().detach().numpy())
+                    #save(dirname + '/' + n + '_output.npy', h.output[0].cpu().detach().numpy())
+                '''
 
                 if (
                     args.logging_nan_inf_filter

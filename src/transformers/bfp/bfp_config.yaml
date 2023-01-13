@@ -1,5 +1,5 @@
 hbfp:
-  num_format: bfp 
+  num_format: fp32 
   rounding_mode: stoc
   epsilon: 0.00000001
   mant_bits: 7

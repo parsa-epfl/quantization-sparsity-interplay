@@ -1,0 +1,511 @@
+01/11/2023 23:45:29 - WARNING - __main__ - Process rank: -1, device: cuda:0, n_gpu: 2distributed training: False, 16-bits training: False
+01/11/2023 23:45:29 - INFO - __main__ - Training/evaluation parameters TrainingArguments(
+_n_gpu=2,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+bf16=False,
+bf16_full_eval=False,
+bfp_tile_size=0,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=0,
+dataloader_pin_memory=True,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=None,
+disable_tqdm=False,
+do_eval=True,
+do_predict=False,
+do_train=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_steps=None,
+evaluation_strategy=no,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+fsdp=[],
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=False,
+greater_is_better=None,
+group_by_length=False,
+half_precision_backend=auto,
+hub_model_id=None,
+hub_private_repo=False,
+hub_strategy=every_save,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_inputs_for_metrics=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=5e-05,
+length_column_name=length,
+load_best_model_at_end=False,
+local_rank=-1,
+log_level=passive,
+log_level_replica=passive,
+log_on_each_node=True,
+logging_dir=/tmp/test-mlm/runs/Jan11_23-45-21_localhost.localdomain,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=500,
+logging_strategy=steps,
+lr_scheduler_type=linear,
+mant_bits=8,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mp_parameters=,
+no_cuda=False,
+num_format=fp32,
+num_train_epochs=10.0,
+optim=BFPAdam,
+optim_args=None,
+output_dir=/tmp/test-mlm,
+overwrite_output_dir=True,
+past_index=-1,
+per_device_eval_batch_size=8,
+per_device_train_batch_size=8,
+prediction_loss_only=False,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+ray_scope=last,
+remove_unused_columns=True,
+report_to=[],
+resume_from_checkpoint=None,
+rounding_mode=stoc,
+run_name=/tmp/test-mlm,
+save_on_each_node=False,
+save_steps=500,
+save_strategy=steps,
+save_total_limit=None,
+seed=42,
+sharded_ddp=[],
+skip_memory_metrics=True,
+tf32=None,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+use_ipex=False,
+use_legacy_prediction_loop=False,
+use_mps_device=False,
+warmup_ratio=0.0,
+warmup_steps=0,
+weight_decay=0.0,
+weight_mant_bits=15,
+xpu_backend=None,
+)
+01/11/2023 23:45:58 - INFO - datasets.info - Loading Dataset Infos from /root/.cache/huggingface/modules/datasets_modules/datasets/wikitext/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+01/11/2023 23:45:58 - INFO - datasets.builder - Overwrite dataset info from restored data version.
+01/11/2023 23:45:58 - INFO - datasets.info - Loading Dataset info from /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+01/11/2023 23:45:58 - WARNING - datasets.builder - Found cached dataset wikitext (/root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126)
+01/11/2023 23:45:58 - INFO - datasets.info - Loading Dataset info from /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+.................... model .........................
+BertForMaskedLM(
+  (bert): BertModel(
+    (embeddings): BertEmbeddings(
+      (word_embeddings): Embedding(28996, 768, padding_idx=0)
+      (position_embeddings): Embedding(512, 768)
+      (token_type_embeddings): Embedding(2, 768)
+      (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      (dropout): Dropout(p=0.1, inplace=False)
+    )
+    (encoder): BertEncoder(
+      (layer): ModuleList(
+        (0): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (1): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (2): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (3): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (4): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (5): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (6): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (7): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (8): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (9): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (10): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (11): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (cls): BertOnlyMLMHead(
+    (predictions): BertLMPredictionHead(
+      (transform): BertPredictionHeadTransform(
+        (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+        (transform_act_fn): GELUActivation()
+        (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      )
+      (decoder): BFPLinear(in_features=768, out_features=28996, bias=True)
+    )
+  )
+)
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-2f7034f57fdde13b.arrow
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-85b9857c3cdb2431.arrow
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-ba54a71be8e91d63.arrow
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-83ee166c52ddffd3.arrow
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-132ce86bd0407711.arrow
+01/11/2023 23:46:17 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-b1b6682424706d0a.arrow
+{'num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'loss': 2.7202, 'learning_rate': 4.163879598662208e-05, 'epoch': 1.67}
+{'loss': 1.8635, 'learning_rate': 3.3277591973244146e-05, 'epoch': 3.34}
+{'loss': 1.6333, 'learning_rate': 2.491638795986622e-05, 'epoch': 5.02}
+{'loss': 1.5577, 'learning_rate': 1.6555183946488294e-05, 'epoch': 6.69}
+{'loss': 1.5218, 'learning_rate': 8.193979933110369e-06, 'epoch': 8.36}
+{'train_runtime': 1365.7705, 'train_samples_per_second': 34.933, 'train_steps_per_second': 2.189, 'train_loss': 1.7997927458389946, 'epoch': 10.0}
+***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =     1.7998
+  train_runtime            = 0:22:45.77
+  train_samples            =       4771
+  train_samples_per_second =     34.933
+  train_steps_per_second   =      2.189
+01/12/2023 00:09:17 - INFO - __main__ - *** Evaluate ***
+***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6873
+  eval_loss               =     1.5052
+  eval_runtime            = 0:00:07.87
+  eval_samples            =        493
+  eval_samples_per_second =     62.604
+  eval_steps_per_second   =      3.937
+  perplexity              =      4.505

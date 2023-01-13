@@ -1,0 +1,702 @@
+01/06/2023 23:14:24 - WARNING - __main__ - Process rank: -1, device: cuda:0, n_gpu: 2distributed training: False, 16-bits training: False
+01/06/2023 23:14:24 - INFO - __main__ - Training/evaluation parameters TrainingArguments(
+_n_gpu=2,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+bf16=False,
+bf16_full_eval=False,
+bfp_tile_size=0,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=0,
+dataloader_pin_memory=True,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=None,
+disable_tqdm=False,
+do_eval=True,
+do_predict=False,
+do_train=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_steps=None,
+evaluation_strategy=epoch,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+fsdp=[],
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=4,
+gradient_checkpointing=False,
+greater_is_better=False,
+group_by_length=False,
+half_precision_backend=auto,
+hub_model_id=simlaharma/vit-base-cifar10,
+hub_private_repo=False,
+hub_strategy=every_save,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_inputs_for_metrics=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=5e-05,
+length_column_name=length,
+load_best_model_at_end=True,
+local_rank=-1,
+log_level=passive,
+log_level_replica=passive,
+log_on_each_node=True,
+logging_dir=./cifar10_outputs/runs/Jan06_23-14-10_localhost.localdomain,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=10,
+logging_strategy=steps,
+lr_scheduler_type=linear,
+mant_bits=8,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=loss,
+mp_parameters=,
+no_cuda=False,
+num_format=fp32,
+num_train_epochs=3.0,
+optim=BFPAdam,
+optim_args=None,
+output_dir=./cifar10_outputs/,
+overwrite_output_dir=True,
+past_index=-1,
+per_device_eval_batch_size=8,
+per_device_train_batch_size=8,
+prediction_loss_only=False,
+push_to_hub=True,
+push_to_hub_model_id=vit-base-cifar10,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+ray_scope=last,
+remove_unused_columns=False,
+report_to=[],
+resume_from_checkpoint=None,
+rounding_mode=stoc,
+run_name=./cifar10_outputs/,
+save_on_each_node=False,
+save_steps=500,
+save_strategy=epoch,
+save_total_limit=5,
+seed=42,
+sharded_ddp=[],
+skip_memory_metrics=True,
+tf32=None,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+use_ipex=False,
+use_legacy_prediction_loop=False,
+use_mps_device=False,
+warmup_ratio=0.0,
+warmup_steps=0,
+weight_decay=0.0,
+weight_mant_bits=15,
+xpu_backend=None,
+)
+01/06/2023 23:14:53 - WARNING - datasets.builder - Found cached dataset cifar10 (/root/.cache/huggingface/datasets/cifar10/plain_text/1.0.0/447d6ec4733dddd1ce3bb577c7166b986eaa4c538dcd9e805ba61f35674a9de4)
+01/06/2023 23:14:53 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/cifar10/plain_text/1.0.0/447d6ec4733dddd1ce3bb577c7166b986eaa4c538dcd9e805ba61f35674a9de4/cache-0e6610774520e174.arrow
+01/06/2023 23:14:53 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /root/.cache/huggingface/datasets/cifar10/plain_text/1.0.0/447d6ec4733dddd1ce3bb577c7166b986eaa4c538dcd9e805ba61f35674a9de4/cache-ab7f4e0bbd39b5eb.arrow
+01/06/2023 23:14:53 - WARNING - datasets.arrow_dataset - Loading cached split indices for dataset at /root/.cache/huggingface/datasets/cifar10/plain_text/1.0.0/447d6ec4733dddd1ce3bb577c7166b986eaa4c538dcd9e805ba61f35674a9de4/cache-3a26c6636b314ba0.arrow and /root/.cache/huggingface/datasets/cifar10/plain_text/1.0.0/447d6ec4733dddd1ce3bb577c7166b986eaa4c538dcd9e805ba61f35674a9de4/cache-0401ed44da0e1298.arrow
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+.................... model .........................
+ViTForImageClassification(
+  (vit): ViTModel(
+    (embeddings): ViTEmbeddings(
+      (patch_embeddings): ViTPatchEmbeddings(
+        (projection): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+      )
+      (dropout): Dropout(p=0.0, inplace=False)
+    )
+    (encoder): ViTEncoder(
+      (layer): ModuleList(
+        (0): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (1): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (2): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (3): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (4): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (5): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (6): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (7): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (8): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (9): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (10): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+        (11): ViTLayer(
+          (attention): ViTAttention(
+            (attention): ViTSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+            (output): ViTSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (intermediate): ViTIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): ViTOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (dropout): Dropout(p=0.0, inplace=False)
+          )
+          (layernorm_before): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+          (layernorm_after): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+        )
+      )
+    )
+    (layernorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+  )
+  (classifier): BFPLinear(in_features=768, out_features=10, bias=True)
+)
+01/06/2023 23:15:31 - WARNING - huggingface_hub.repository - /home/parsa/simla/sparsity/transformers_hbfp_sparsity/examples/pytorch/image-classification/./cifar10_outputs/ is already a clone of https://huggingface.co/simlaharma/vit-base-cifar10. Make sure you pull the latest changes with `repo.git_pull()`.
+{'num_format': 'bfp', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 3, 'weight_mant_bits': 15, 'bfp_tile_size': 8, 'device': 'gpu'}
+{'loss': 2.3024, 'learning_rate': 4.9748995983935746e-05, 'epoch': 0.02}
+{'loss': 2.3068, 'learning_rate': 4.949799196787149e-05, 'epoch': 0.03}
+{'loss': 2.3083, 'learning_rate': 4.924698795180723e-05, 'epoch': 0.05}
+{'loss': 2.3109, 'learning_rate': 4.8995983935742975e-05, 'epoch': 0.06}
+{'loss': 2.3021, 'learning_rate': 4.874497991967872e-05, 'epoch': 0.08}
+{'loss': 2.3059, 'learning_rate': 4.8493975903614455e-05, 'epoch': 0.09}
+{'loss': 2.3107, 'learning_rate': 4.8242971887550205e-05, 'epoch': 0.11}
+{'loss': 2.3092, 'learning_rate': 4.799196787148594e-05, 'epoch': 0.12}
+{'loss': 2.3165, 'learning_rate': 4.774096385542169e-05, 'epoch': 0.14}
+{'loss': 2.3094, 'learning_rate': 4.7489959839357435e-05, 'epoch': 0.15}
+{'loss': 2.3123, 'learning_rate': 4.723895582329317e-05, 'epoch': 0.17}
+{'loss': 2.3067, 'learning_rate': 4.698795180722892e-05, 'epoch': 0.18}
+{'loss': 2.3156, 'learning_rate': 4.673694779116466e-05, 'epoch': 0.2}
+{'loss': 2.3058, 'learning_rate': 4.64859437751004e-05, 'epoch': 0.21}
+{'loss': 2.3019, 'learning_rate': 4.6234939759036145e-05, 'epoch': 0.23}
+{'loss': 2.3116, 'learning_rate': 4.598393574297189e-05, 'epoch': 0.24}
+{'loss': 2.3081, 'learning_rate': 4.573293172690764e-05, 'epoch': 0.26}
+{'loss': 2.3074, 'learning_rate': 4.5481927710843374e-05, 'epoch': 0.27}
+{'loss': 2.3094, 'learning_rate': 4.523092369477912e-05, 'epoch': 0.29}
+{'loss': 2.3056, 'learning_rate': 4.497991967871486e-05, 'epoch': 0.3}
+{'loss': 2.3079, 'learning_rate': 4.4728915662650604e-05, 'epoch': 0.32}
+{'loss': 2.3094, 'learning_rate': 4.447791164658635e-05, 'epoch': 0.33}
+{'loss': 2.3109, 'learning_rate': 4.422690763052209e-05, 'epoch': 0.35}
+{'loss': 2.311, 'learning_rate': 4.3975903614457834e-05, 'epoch': 0.36}
+{'loss': 2.3016, 'learning_rate': 4.372489959839358e-05, 'epoch': 0.38}
+{'loss': 2.3016, 'learning_rate': 4.347389558232932e-05, 'epoch': 0.39}
+{'loss': 2.3128, 'learning_rate': 4.3222891566265064e-05, 'epoch': 0.41}
+{'loss': 2.2974, 'learning_rate': 4.297188755020081e-05, 'epoch': 0.42}
+{'loss': 2.3118, 'learning_rate': 4.2720883534136544e-05, 'epoch': 0.44}
+{'loss': 2.2989, 'learning_rate': 4.2469879518072294e-05, 'epoch': 0.45}
+{'loss': 2.3065, 'learning_rate': 4.221887550200803e-05, 'epoch': 0.47}
+{'loss': 2.309, 'learning_rate': 4.196787148594378e-05, 'epoch': 0.48}
+{'loss': 2.3111, 'learning_rate': 4.1716867469879523e-05, 'epoch': 0.5}
+{'loss': 2.3083, 'learning_rate': 4.146586345381526e-05, 'epoch': 0.51}
+{'loss': 2.3042, 'learning_rate': 4.121485943775101e-05, 'epoch': 0.53}
+{'loss': 2.3018, 'learning_rate': 4.0963855421686746e-05, 'epoch': 0.54}
+{'loss': 2.3025, 'learning_rate': 4.071285140562249e-05, 'epoch': 0.56}
+{'loss': 2.3099, 'learning_rate': 4.046184738955823e-05, 'epoch': 0.57}
+{'loss': 2.2986, 'learning_rate': 4.0210843373493976e-05, 'epoch': 0.59}
+{'loss': 2.3028, 'learning_rate': 3.995983935742972e-05, 'epoch': 0.6}
+{'loss': 2.3052, 'learning_rate': 3.970883534136546e-05, 'epoch': 0.62}
+{'loss': 2.2975, 'learning_rate': 3.9457831325301206e-05, 'epoch': 0.63}
+{'loss': 2.307, 'learning_rate': 3.920682730923695e-05, 'epoch': 0.65}
+{'loss': 2.3052, 'learning_rate': 3.895582329317269e-05, 'epoch': 0.66}
+{'loss': 2.2962, 'learning_rate': 3.8704819277108436e-05, 'epoch': 0.68}
+{'loss': 2.3016, 'learning_rate': 3.845381526104418e-05, 'epoch': 0.69}
+{'loss': 2.3025, 'learning_rate': 3.820281124497992e-05, 'epoch': 0.71}
+{'loss': 2.2978, 'learning_rate': 3.7951807228915666e-05, 'epoch': 0.72}
+{'loss': 2.3013, 'learning_rate': 3.770080321285141e-05, 'epoch': 0.74}
+{'loss': 2.3, 'learning_rate': 3.744979919678715e-05, 'epoch': 0.75}
+{'loss': 2.2997, 'learning_rate': 3.7198795180722895e-05, 'epoch': 0.77}
+{'loss': 2.2917, 'learning_rate': 3.694779116465863e-05, 'epoch': 0.78}
+{'loss': 2.3038, 'learning_rate': 3.669678714859438e-05, 'epoch': 0.8}
+{'loss': 2.2963, 'learning_rate': 3.644578313253012e-05, 'epoch': 0.81}
+{'loss': 2.2989, 'learning_rate': 3.619477911646587e-05, 'epoch': 0.83}
+{'loss': 2.3045, 'learning_rate': 3.5943775100401605e-05, 'epoch': 0.84}
+{'loss': 2.3037, 'learning_rate': 3.569277108433735e-05, 'epoch': 0.86}
+{'loss': 2.2965, 'learning_rate': 3.54417670682731e-05, 'epoch': 0.87}
+{'loss': 2.3001, 'learning_rate': 3.5190763052208835e-05, 'epoch': 0.89}
+{'loss': 2.2986, 'learning_rate': 3.4939759036144585e-05, 'epoch': 0.9}
+{'loss': 2.2954, 'learning_rate': 3.468875502008032e-05, 'epoch': 0.92}
+{'loss': 2.2929, 'learning_rate': 3.4437751004016065e-05, 'epoch': 0.93}
+{'loss': 2.2983, 'learning_rate': 3.418674698795181e-05, 'epoch': 0.95}
+{'loss': 2.2999, 'learning_rate': 3.393574297188755e-05, 'epoch': 0.96}
+{'loss': 2.3013, 'learning_rate': 3.3684738955823294e-05, 'epoch': 0.98}
+{'loss': 2.2978, 'learning_rate': 3.343373493975904e-05, 'epoch': 0.99}
+{'eval_loss': 2.2995200157165527, 'eval_accuracy': 0.10933333333333334, 'eval_runtime': 74.5672, 'eval_samples_per_second': 100.58, 'eval_steps_per_second': 6.29, 'epoch': 1.0}
+{'loss': 2.3541, 'learning_rate': 3.318273092369478e-05, 'epoch': 1.01}
+{'loss': 2.2976, 'learning_rate': 3.2931726907630524e-05, 'epoch': 1.02}
+{'loss': 2.3058, 'learning_rate': 3.268072289156627e-05, 'epoch': 1.04}
+{'loss': 2.3066, 'learning_rate': 3.242971887550201e-05, 'epoch': 1.05}
+{'loss': 2.2959, 'learning_rate': 3.2178714859437754e-05, 'epoch': 1.07}
+{'loss': 2.2926, 'learning_rate': 3.192771084337349e-05, 'epoch': 1.08}
+{'loss': 2.3064, 'learning_rate': 3.167670682730924e-05, 'epoch': 1.1}
+{'loss': 2.2999, 'learning_rate': 3.1425702811244984e-05, 'epoch': 1.11}
+{'loss': 2.2936, 'learning_rate': 3.117469879518072e-05, 'epoch': 1.13}
+{'loss': 2.2965, 'learning_rate': 3.092369477911647e-05, 'epoch': 1.14}
+{'loss': 2.295, 'learning_rate': 3.067269076305221e-05, 'epoch': 1.16}
+{'loss': 2.3007, 'learning_rate': 3.0421686746987953e-05, 'epoch': 1.17}
+{'loss': 2.3002, 'learning_rate': 3.0170682730923693e-05, 'epoch': 1.19}
+{'loss': 2.2964, 'learning_rate': 2.991967871485944e-05, 'epoch': 1.2}
+{'loss': 2.2962, 'learning_rate': 2.9668674698795183e-05, 'epoch': 1.22}
+{'loss': 2.2978, 'learning_rate': 2.9417670682730923e-05, 'epoch': 1.23}
+{'loss': 2.2867, 'learning_rate': 2.916666666666667e-05, 'epoch': 1.25}
+{'loss': 2.2924, 'learning_rate': 2.891566265060241e-05, 'epoch': 1.26}
+{'loss': 2.2958, 'learning_rate': 2.8664658634538156e-05, 'epoch': 1.28}
+{'loss': 2.2986, 'learning_rate': 2.8413654618473896e-05, 'epoch': 1.3}
+{'loss': 2.3004, 'learning_rate': 2.816265060240964e-05, 'epoch': 1.31}
+{'loss': 2.2915, 'learning_rate': 2.791164658634538e-05, 'epoch': 1.33}
+{'loss': 2.2818, 'learning_rate': 2.7660642570281126e-05, 'epoch': 1.34}
+{'loss': 2.2896, 'learning_rate': 2.7409638554216873e-05, 'epoch': 1.36}
+{'loss': 2.2847, 'learning_rate': 2.7158634538152612e-05, 'epoch': 1.37}
+{'loss': 2.3019, 'learning_rate': 2.6907630522088356e-05, 'epoch': 1.39}
+{'loss': 2.291, 'learning_rate': 2.6656626506024096e-05, 'epoch': 1.4}
+{'loss': 2.2936, 'learning_rate': 2.6405622489959842e-05, 'epoch': 1.42}
+{'loss': 2.2866, 'learning_rate': 2.6154618473895582e-05, 'epoch': 1.43}
+{'loss': 2.2848, 'learning_rate': 2.5903614457831325e-05, 'epoch': 1.45}
+{'loss': 2.2827, 'learning_rate': 2.5652610441767072e-05, 'epoch': 1.46}
+{'loss': 2.2881, 'learning_rate': 2.5401606425702812e-05, 'epoch': 1.48}
+{'loss': 2.2821, 'learning_rate': 2.515060240963856e-05, 'epoch': 1.49}
+{'loss': 2.2808, 'learning_rate': 2.48995983935743e-05, 'epoch': 1.51}
+{'loss': 2.2922, 'learning_rate': 2.4648594377510042e-05, 'epoch': 1.52}
+{'loss': 2.2904, 'learning_rate': 2.4397590361445785e-05, 'epoch': 1.54}
+{'loss': 2.285, 'learning_rate': 2.4146586345381528e-05, 'epoch': 1.55}
+{'loss': 2.2863, 'learning_rate': 2.389558232931727e-05, 'epoch': 1.57}
+{'loss': 2.2784, 'learning_rate': 2.364457831325301e-05, 'epoch': 1.58}
+{'loss': 2.2845, 'learning_rate': 2.3393574297188755e-05, 'epoch': 1.6}
+{'loss': 2.2874, 'learning_rate': 2.3142570281124498e-05, 'epoch': 1.61}
+{'loss': 2.2834, 'learning_rate': 2.289156626506024e-05, 'epoch': 1.63}
+{'loss': 2.2753, 'learning_rate': 2.2640562248995988e-05, 'epoch': 1.64}
+{'loss': 2.2778, 'learning_rate': 2.2389558232931728e-05, 'epoch': 1.66}
+{'loss': 2.2771, 'learning_rate': 2.213855421686747e-05, 'epoch': 1.67}
+{'loss': 2.2775, 'learning_rate': 2.1887550200803214e-05, 'epoch': 1.69}
+{'loss': 2.2834, 'learning_rate': 2.1636546184738958e-05, 'epoch': 1.7}
+{'loss': 2.2676, 'learning_rate': 2.13855421686747e-05, 'epoch': 1.72}
+{'loss': 2.2659, 'learning_rate': 2.113453815261044e-05, 'epoch': 1.73}
+{'loss': 2.2749, 'learning_rate': 2.0883534136546184e-05, 'epoch': 1.75}
+{'loss': 2.2713, 'learning_rate': 2.063253012048193e-05, 'epoch': 1.76}
+{'loss': 2.2695, 'learning_rate': 2.0381526104417674e-05, 'epoch': 1.78}
+{'loss': 2.2684, 'learning_rate': 2.0130522088353414e-05, 'epoch': 1.79}
+{'loss': 2.2717, 'learning_rate': 1.9879518072289157e-05, 'epoch': 1.81}
+{'loss': 2.2678, 'learning_rate': 1.96285140562249e-05, 'epoch': 1.82}
+{'loss': 2.2685, 'learning_rate': 1.9377510040160644e-05, 'epoch': 1.84}
+{'loss': 2.2584, 'learning_rate': 1.9126506024096387e-05, 'epoch': 1.85}
+{'loss': 2.2673, 'learning_rate': 1.8875502008032127e-05, 'epoch': 1.87}
+{'loss': 2.2787, 'learning_rate': 1.8624497991967873e-05, 'epoch': 1.88}
+{'loss': 2.2658, 'learning_rate': 1.8373493975903617e-05, 'epoch': 1.9}
+{'loss': 2.2554, 'learning_rate': 1.812248995983936e-05, 'epoch': 1.91}
+{'loss': 2.26, 'learning_rate': 1.78714859437751e-05, 'epoch': 1.93}
+{'loss': 2.2545, 'learning_rate': 1.7620481927710843e-05, 'epoch': 1.94}
+{'loss': 2.2586, 'learning_rate': 1.7369477911646586e-05, 'epoch': 1.96}
+{'loss': 2.2563, 'learning_rate': 1.711847389558233e-05, 'epoch': 1.97}
+{'loss': 2.258, 'learning_rate': 1.6867469879518073e-05, 'epoch': 1.99}
+{'eval_loss': 2.248473882675171, 'eval_accuracy': 0.1652, 'eval_runtime': 76.6777, 'eval_samples_per_second': 97.812, 'eval_steps_per_second': 6.117, 'epoch': 2.0}
+{'loss': 2.3086, 'learning_rate': 1.6616465863453816e-05, 'epoch': 2.0}
+{'loss': 2.2383, 'learning_rate': 1.636546184738956e-05, 'epoch': 2.02}
+{'loss': 2.2526, 'learning_rate': 1.6114457831325303e-05, 'epoch': 2.03}
+{'loss': 2.2357, 'learning_rate': 1.5863453815261046e-05, 'epoch': 2.05}
+{'loss': 2.2376, 'learning_rate': 1.561244979919679e-05, 'epoch': 2.06}
+{'loss': 2.2325, 'learning_rate': 1.536144578313253e-05, 'epoch': 2.08}
+{'loss': 2.2274, 'learning_rate': 1.5110441767068272e-05, 'epoch': 2.09}
+{'loss': 2.2252, 'learning_rate': 1.4859437751004016e-05, 'epoch': 2.11}
+{'loss': 2.2549, 'learning_rate': 1.460843373493976e-05, 'epoch': 2.12}
+{'loss': 2.2251, 'learning_rate': 1.4357429718875504e-05, 'epoch': 2.14}
+{'loss': 2.226, 'learning_rate': 1.4106425702811245e-05, 'epoch': 2.15}
+{'loss': 2.2298, 'learning_rate': 1.3855421686746989e-05, 'epoch': 2.17}
+{'loss': 2.2279, 'learning_rate': 1.3604417670682732e-05, 'epoch': 2.18}
+{'loss': 2.219, 'learning_rate': 1.3353413654618473e-05, 'epoch': 2.2}
+{'loss': 2.2005, 'learning_rate': 1.3102409638554217e-05, 'epoch': 2.21}
+{'loss': 2.2185, 'learning_rate': 1.285140562248996e-05, 'epoch': 2.23}
+{'loss': 2.1979, 'learning_rate': 1.2600401606425705e-05, 'epoch': 2.24}
+{'loss': 2.2076, 'learning_rate': 1.2349397590361447e-05, 'epoch': 2.26}
+{'loss': 2.2038, 'learning_rate': 1.209839357429719e-05, 'epoch': 2.27}
+{'loss': 2.2168, 'learning_rate': 1.1847389558232933e-05, 'epoch': 2.29}
+{'loss': 2.2171, 'learning_rate': 1.1596385542168675e-05, 'epoch': 2.3}
+{'loss': 2.2019, 'learning_rate': 1.1345381526104418e-05, 'epoch': 2.32}
+{'loss': 2.2149, 'learning_rate': 1.1094377510040161e-05, 'epoch': 2.33}
+{'loss': 2.2046, 'learning_rate': 1.0843373493975904e-05, 'epoch': 2.35}
+{'loss': 2.2186, 'learning_rate': 1.0592369477911648e-05, 'epoch': 2.36}
+{'loss': 2.2057, 'learning_rate': 1.034136546184739e-05, 'epoch': 2.38}
+{'loss': 2.2028, 'learning_rate': 1.0090361445783134e-05, 'epoch': 2.39}
+{'loss': 2.2044, 'learning_rate': 9.839357429718876e-06, 'epoch': 2.41}
+{'loss': 2.212, 'learning_rate': 9.588353413654619e-06, 'epoch': 2.42}
+{'loss': 2.1933, 'learning_rate': 9.33734939759036e-06, 'epoch': 2.44}
+{'loss': 2.2093, 'learning_rate': 9.086345381526106e-06, 'epoch': 2.45}
+{'loss': 2.19, 'learning_rate': 8.835341365461847e-06, 'epoch': 2.47}
+{'loss': 2.1841, 'learning_rate': 8.58433734939759e-06, 'epoch': 2.48}
+{'loss': 2.2061, 'learning_rate': 8.333333333333334e-06, 'epoch': 2.5}
+{'loss': 2.1942, 'learning_rate': 8.082329317269077e-06, 'epoch': 2.51}
+{'loss': 2.1852, 'learning_rate': 7.83132530120482e-06, 'epoch': 2.53}
+{'loss': 2.1828, 'learning_rate': 7.580321285140563e-06, 'epoch': 2.54}
+{'loss': 2.2022, 'learning_rate': 7.329317269076305e-06, 'epoch': 2.56}
+{'loss': 2.1947, 'learning_rate': 7.078313253012049e-06, 'epoch': 2.58}
+{'loss': 2.1695, 'learning_rate': 6.827309236947792e-06, 'epoch': 2.59}
+{'loss': 2.1818, 'learning_rate': 6.576305220883534e-06, 'epoch': 2.61}
+{'loss': 2.207, 'learning_rate': 6.325301204819277e-06, 'epoch': 2.62}
+{'loss': 2.191, 'learning_rate': 6.074297188755021e-06, 'epoch': 2.64}
+{'loss': 2.1632, 'learning_rate': 5.823293172690764e-06, 'epoch': 2.65}
+{'loss': 2.1683, 'learning_rate': 5.572289156626506e-06, 'epoch': 2.67}
+{'loss': 2.2066, 'learning_rate': 5.3212851405622495e-06, 'epoch': 2.68}
+{'loss': 2.167, 'learning_rate': 5.070281124497992e-06, 'epoch': 2.7}
+{'loss': 2.1996, 'learning_rate': 4.819277108433735e-06, 'epoch': 2.71}
+{'loss': 2.1576, 'learning_rate': 4.568273092369478e-06, 'epoch': 2.73}
+{'loss': 2.1934, 'learning_rate': 4.317269076305222e-06, 'epoch': 2.74}
+{'loss': 2.1818, 'learning_rate': 4.066265060240964e-06, 'epoch': 2.76}
+{'loss': 2.1589, 'learning_rate': 3.8152610441767074e-06, 'epoch': 2.77}
+{'loss': 2.1669, 'learning_rate': 3.56425702811245e-06, 'epoch': 2.79}
+{'loss': 2.1868, 'learning_rate': 3.313253012048193e-06, 'epoch': 2.8}
+{'loss': 2.1977, 'learning_rate': 3.062248995983936e-06, 'epoch': 2.82}
+{'loss': 2.1789, 'learning_rate': 2.811244979919679e-06, 'epoch': 2.83}
+{'loss': 2.2164, 'learning_rate': 2.5602409638554217e-06, 'epoch': 2.85}
+{'loss': 2.1622, 'learning_rate': 2.3092369477911645e-06, 'epoch': 2.86}
+{'loss': 2.1742, 'learning_rate': 2.0582329317269078e-06, 'epoch': 2.88}
+{'loss': 2.1839, 'learning_rate': 1.8072289156626506e-06, 'epoch': 2.89}
+{'loss': 2.2118, 'learning_rate': 1.5562248995983937e-06, 'epoch': 2.91}
+{'loss': 2.1649, 'learning_rate': 1.3052208835341365e-06, 'epoch': 2.92}
+{'loss': 2.1567, 'learning_rate': 1.0542168674698796e-06, 'epoch': 2.94}
+{'loss': 2.1777, 'learning_rate': 8.032128514056225e-07, 'epoch': 2.95}
+{'loss': 2.1681, 'learning_rate': 5.522088353413655e-07, 'epoch': 2.97}
+{'loss': 2.1646, 'learning_rate': 3.0120481927710845e-07, 'epoch': 2.98}
+{'loss': 2.1897, 'learning_rate': 5.0200803212851406e-08, 'epoch': 3.0}
+{'eval_loss': 2.1633565425872803, 'eval_accuracy': 0.18426666666666666, 'eval_runtime': 72.6339, 'eval_samples_per_second': 103.258, 'eval_steps_per_second': 6.457, 'epoch': 3.0}
+{'train_runtime': 2718.8099, 'train_samples_per_second': 46.896, 'train_steps_per_second': 0.733, 'train_loss': 2.2627436425312455, 'epoch': 3.0}
+01/07/2023 00:01:24 - WARNING - huggingface_hub.repository - Several commits (2) will be pushed upstream.
+01/07/2023 00:01:24 - WARNING - huggingface_hub.repository - The progress bars may be unreliable.
+01/07/2023 00:02:53 - WARNING - huggingface_hub.repository - remote: Scanning LFS files for validity, may be slow...[K
+remote: LFS file scan complete.[K
+To https://user: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@huggingface.co/simlaharma/vit-base-cifar10
+   d86ae02..b1489a0  main -> main
+
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.2627
+  train_runtime            = 0:45:18.80
+  train_samples_per_second =     46.896
+  train_steps_per_second   =      0.733
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.1921
+  eval_loss               =     2.1598
+  eval_runtime            = 0:01:15.87
+  eval_samples_per_second =     98.841
+  eval_steps_per_second   =      6.181
+01/07/2023 00:04:46 - WARNING - huggingface_hub.repository - To https://user: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@huggingface.co/simlaharma/vit-base-cifar10
+   b1489a0..c80a824  main -> main
+
+01/07/2023 00:05:26 - WARNING - huggingface_hub.repository - To https://user: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@huggingface.co/simlaharma/vit-base-cifar10
+   c80a824..0c25ef0  main -> main
+

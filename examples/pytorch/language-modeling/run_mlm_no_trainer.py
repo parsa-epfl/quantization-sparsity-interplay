@@ -55,6 +55,8 @@ from transformers import (
 from transformers.utils import check_min_version, get_full_repo_name, send_example_telemetry
 from transformers.utils.versions import require_version
 
+from numpy import save
+from pathlib import Path
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")
@@ -64,6 +66,16 @@ require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/lang
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
+class Hook():
+    def __init__(self, module, backward=False):
+        if backward==False:
+            self.hook = module.register_forward_hook(self.hook_fn)
+    def hook_fn(self, module, input, output):
+        self.input = input
+        self.output = output
+        self.module = module
+    def close(self):
+        self.hook.remove()
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Finetune a transformers model on a Masked Language Modeling task")
@@ -615,6 +627,20 @@ def main():
         if args.with_tracking:
             total_loss = 0
         for step, batch in enumerate(train_dataloader):
+            '''
+            #SAVE TENSORS
+
+            names = []
+            _layers = []
+            def remove_sequential2(network):
+                for name, layer in model.named_modules():
+                    if list(layer.children()) == []: # if leaf node, add it to list
+                        names.append(name)
+                        _layers.append(layer)
+            remove_sequential2(model)
+            hookF = [Hook(layer) for layer in _layers]
+            '''
+
             # We need to skip steps until we reach the resumed step
             if args.resume_from_checkpoint and epoch == starting_epoch:
                 if resume_step is not None and step < resume_step:
@@ -630,6 +656,35 @@ def main():
                 if args.with_tracking:
                     total_loss += loss.detach().float()
                 accelerator.backward(loss)
+
+                '''
+                #SAVE TENSORS
+                if (args.local_index % 196) == 1 and (args.cur_rank == 0):
+                    #dirname = '/parsadata1/mixedprecision_hbfp/fp32distr/'+ str(args.local_index)
+                    dirname = '/home/parsa/simla/mixedprecision_hbfp/accuracybooster_tensors/hbfp4/'+str(args.mixed_precision)+'_'+str(args.mixed_tile)+'_'+str(args.mant_bits)+ '/'+ str(args.local_index)
+                    Path(dirname).mkdir(parents=True, exist_ok=True)
+
+                    input_dist = {}
+                    output_dist = {}
+                    grad_dist = {}
+                    weight_dist = {}
+
+                    params = list(model.named_parameters())
+                    for i in range(len(params)):
+                        param_name = params[i][0]
+                        if params[i][1].requires_grad and ('weight' in param_name):
+                            weight_dist[param_name] = params[i][1]
+                            grad_dist[param_name] = params[i][1].grad
+                            save(dirname + '/' + param_name + '_weight.npy', params[i][1].cpu().detach().numpy())
+                            save(dirname + '/' + param_name + '_grad.npy', params[i][1].grad.cpu().detach().numpy())
+
+                    for n,h in zip(names,hookF):
+                        input_dist[n] = h.input
+                        output_dist[n] = h.output
+                        save(dirname + '/' + n + '_input.npy', h.input[0].cpu().detach().numpy())
+                        save(dirname + '/' + n + '_output.npy', h.output[0].cpu().detach().numpy())
+                '''
+
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()

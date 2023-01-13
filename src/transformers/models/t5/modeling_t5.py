@@ -47,6 +47,9 @@ from ...utils import (
 from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_t5 import T5Config
 
+### BFP imports
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp import bfp_util
 
 logger = logging.get_logger(__name__)
 

@@ -29,7 +29,7 @@
 
 import torch
 import math
-from .bfp_ops import float_to_bfp_tiled, unpack_bfp_args
+from .bfp_ops import float_to_bfp_tiled, float_to_bfp_blocked, unpack_bfp_args
 from .bfp_util import get_bfp_args
 
 required=object()
@@ -107,7 +107,7 @@ class BFPAdam(torch.optim.Adam):
                     p.data.addcdiv_(exp_avg, denom, value=-step_size)
                 elif self.bfp_args['num_format'] == 'bfp':
                     #print('....... in else')
-                    updated_value = float_to_bfp_tiled(p.data.addcdiv_(exp_avg, denom, value=-step_size), sgd_update=True, **self.bfp_args)
+                    updated_value = float_to_bfp_blocked(p.data.addcdiv_(exp_avg, denom, value=-step_size), sgd_update=True, **self.bfp_args)
 
                     p.data.copy_(updated_value.data)
                 else:

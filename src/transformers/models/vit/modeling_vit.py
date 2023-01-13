@@ -38,7 +38,7 @@ from ...utils import (
 from .configuration_vit import ViTConfig
 
 ### BFP imports
-from ...bfp.bfp_ops import BFPLinear, BFPConv2d
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
 from ...bfp import bfp_util
 
 
@@ -166,6 +166,7 @@ class ViTPatchEmbeddings(nn.Module):
         self.num_patches = num_patches
 
         ### bfp layers
+        ### TODO: Check this
         #self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
         self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
 
@@ -222,7 +223,8 @@ class ViTSelfAttention(nn.Module):
         query_layer = self.transpose_for_scores(mixed_query_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
 
@@ -237,7 +239,7 @@ class ViTSelfAttention(nn.Module):
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
 
-        context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = bfp_matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
@@ -661,6 +663,7 @@ class ViTForMaskedImageModeling(ViTPreTrainedModel):
 
         self.vit = ViTModel(config, add_pooling_layer=False, use_mask_token=True)
 
+        ### TODO: conv2d
         self.decoder = nn.Sequential(
             nn.Conv2d(
                 in_channels=config.hidden_size,

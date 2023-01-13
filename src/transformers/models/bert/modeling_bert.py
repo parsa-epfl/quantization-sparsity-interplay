@@ -51,6 +51,10 @@ from ...utils import (
 )
 from .configuration_bert import BertConfig
 
+### BFP imports
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp import bfp_util
+
 
 logger = logging.get_logger(__name__)
 
@@ -243,6 +247,9 @@ class BertEmbeddings(nn.Module):
 class BertSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
                 f"The hidden size ({config.hidden_size}) is not a multiple of the number of attention "
@@ -253,9 +260,9 @@ class BertSelfAttention(nn.Module):
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+        self.query = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
+        self.key = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
+        self.value = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
@@ -321,7 +328,8 @@ class BertSelfAttention(nn.Module):
             past_key_value = (key_layer, value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
 
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             query_length, key_length = query_layer.shape[2], key_layer.shape[2]
@@ -361,7 +369,8 @@ class BertSelfAttention(nn.Module):
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
 
-        context_layer = torch.matmul(attention_probs, value_layer)
+        bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        context_layer = bfp_matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
@@ -377,7 +386,10 @@ class BertSelfAttention(nn.Module):
 class BertSelfOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -440,7 +452,10 @@ class BertAttention(nn.Module):
 class BertIntermediate(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.intermediate_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.dense = BFPLinear(config.hidden_size, config.intermediate_size, **self.bfp_args)
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -455,7 +470,10 @@ class BertIntermediate(nn.Module):
 class BertOutput(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.dense = BFPLinear(config.intermediate_size, config.hidden_size, **self.bfp_args)
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
@@ -652,7 +670,10 @@ class BertEncoder(nn.Module):
 class BertPooler(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -667,7 +688,10 @@ class BertPooler(nn.Module):
 class BertPredictionHeadTransform(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
         if isinstance(config.hidden_act, str):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -684,11 +708,14 @@ class BertPredictionHeadTransform(nn.Module):
 class BertLMPredictionHead(nn.Module):
     def __init__(self, config):
         super().__init__()
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         self.transform = BertPredictionHeadTransform(config)
 
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
-        self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
 
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
 
@@ -714,7 +741,10 @@ class BertOnlyMLMHead(nn.Module):
 class BertOnlyNSPHead(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.seq_relationship = nn.Linear(config.hidden_size, 2)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        self.seq_relationship = BFPLinear(config.hidden_size, 2, **self.bfp_args)
 
     def forward(self, pooled_output):
         seq_relationship_score = self.seq_relationship(pooled_output)
@@ -724,8 +754,11 @@ class BertOnlyNSPHead(nn.Module):
 class BertPreTrainingHeads(nn.Module):
     def __init__(self, config):
         super().__init__()
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         self.predictions = BertLMPredictionHead(config)
-        self.seq_relationship = nn.Linear(config.hidden_size, 2)
+        self.seq_relationship = BFPLinear(config.hidden_size, 2, **self.bfp_args)
 
     def forward(self, sequence_output, pooled_output):
         prediction_scores = self.predictions(sequence_output)
@@ -1520,6 +1553,9 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
 class BertForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         self.num_labels = config.num_labels
         self.config = config
 
@@ -1528,7 +1564,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1624,13 +1660,16 @@ class BertForSequenceClassification(BertPreTrainedModel):
 class BertForMultipleChoice(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
 
         self.bert = BertModel(config)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size, 1)
+        self.classifier = BFPLinear(config.hidden_size, 1, **self.bfp_args)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1722,6 +1761,9 @@ class BertForTokenClassification(BertPreTrainedModel):
 
     def __init__(self, config):
         super().__init__(config)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config, add_pooling_layer=False)
@@ -1729,7 +1771,7 @@ class BertForTokenClassification(BertPreTrainedModel):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1809,10 +1851,13 @@ class BertForQuestionAnswering(BertPreTrainedModel):
 
     def __init__(self, config):
         super().__init__(config)
+        ### Add bfp args (*TBC)
+        self.bfp_args = bfp_util.get_bfp_args()
+        
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config, add_pooling_layer=False)
-        self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
+        self.qa_outputs = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
 
         # Initialize weights and apply final processing
         self.post_init()

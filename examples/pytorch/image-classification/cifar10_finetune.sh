@@ -1,14 +1,14 @@
 python run_image_classification.py  \
    --dataset_name cifar10  \
-   --output_dir ./cifar10_outputs/  \
-   --overwrite_output_dir  \
+   --output_dir ./cifar10_hbfp2,64/  \
+   --overwrite_output_dir \
    --remove_unused_columns False  \
    --do_train  \
    --do_eval  \
    --push_to_hub  \
    --push_to_hub_model_id vit-base-cifar10  \
    --learning_rate 5e-5  \
-   --num_train_epochs 3  \
+   --num_train_epochs 10  \
    --per_device_train_batch_size 8  \
    --per_device_eval_batch_size 8  \
    --logging_strategy steps  \

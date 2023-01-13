@@ -76,10 +76,10 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, exp_given=None):
     """
     Convert float tensor t to bfp
     """
-    #print('------------------- in _float_to_bfp -------------------')
     #print(f'mant: {mant_bits}')
     #print(t.shape)
     #print(t)
+
     exp = get_exponent(t, epsilon)
 
     #The interval between two consecutive numbers with that exponent value
@@ -96,20 +96,66 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, exp_given=None):
     return torch.min(torch.max(rounded, -max_v), max_v)
 
 
+
+def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
+                       num_format='', weight_mant_bits=0,
+                       sgd_update=False, mant_bits_pow=None):
+    """
+    Convert fp32 tensor t to bfp with tiling.
+    Used for weights (which are handled in the optimizer)
+    """
+    threshold = 32.0
+    outliers = torch.where(t > threshold, 1, 0)
+    o_count = torch.sum(outliers)
+    print(f'outliers: {o_count}')
+    if o_count > 0:
+        print(f'tensor size: {t.shape}')
+        torch.set_printoptions(threshold=10000000)
+        print((outliers == 1).nonzero(as_tuple=False))
+    assert num_format == 'bfp'
+    if sgd_update:
+        mant_bits = weight_mant_bits
+
+    orig_shape = t.shape
+    block_size = bfp_tile_size**2
+    if block_size == 0:
+        return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device).view(orig_shape)
+
+    padded_shape = list(orig_shape)
+
+    if orig_shape[-1] % block_size != 0:
+        pad_size = block_size - (orig_shape[-1] % block_size)
+        t = F.pad(t, (0,pad_size),'constant')
+        padded_shape[-1] = orig_shape[-1]+pad_size
+
+    t = t.contiguous().view(-1,block_size)
+
+    t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device)
+
+    t = t.contiguous().view(padded_shape)
+
+    return t.narrow(-1,0,orig_shape[-1])
+
+
+
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
     """
     Convert a batch of fp32 tensor t to bfp
     """
+    """
     assert num_format == 'bfp'
     orig_shape = t.size()
 
-    # t = t.view(t.size()[0], -1)
-    #print('------------------- in batched -------------------')
-    #print(t.shape)
-    #print(t)
-
     t = t.reshape(t.size()[0], -1)
+    o = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device)
+    return o.view(orig_shape)
+    """
+    assert num_format == 'bfp'
+    orig_shape = t.size()
+    print(orig_shape)
+
+    t = t.reshape(-1,orig_shape[-1])
     o = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device)
     return o.view(orig_shape)
 
@@ -187,6 +233,7 @@ def float_to_bfp_tiled(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_si
         mant_bits = weight_mant_bits
 
     orig_shape = t.size()
+    print(orig_shape)
     if bfp_tile_size == 0:
         return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device).view(orig_shape)
 
@@ -229,7 +276,7 @@ def _gen_bfp_op(op, name, bfp_args):
     class NewOpIn(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x, w):
-            return (float_to_bfp_batched(x, **bfp_args), float_to_bfp_batched_weight(w, **bfp_args))
+            return (float_to_bfp_blocked(x, **bfp_args), float_to_bfp_blocked(w, **bfp_args))
 
         @staticmethod
         def backward(ctx, grad_x, grad_w):
@@ -245,7 +292,7 @@ def _gen_bfp_op(op, name, bfp_args):
 
         @staticmethod
         def backward(ctx, op_out_grad):
-            return float_to_bfp_batched(op_out_grad, **bfp_args)
+            return float_to_bfp_blocked(op_out_grad, **bfp_args)
 
     NewOpOut.__name__ = name + '_Out'
     new_op_out = NewOpOut.apply

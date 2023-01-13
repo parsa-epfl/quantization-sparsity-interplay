@@ -380,6 +380,11 @@ def main():
         use_auth_token=True if model_args.use_auth_token else None,
     )
 
+
+    print('.................... model .........................')
+    print(model)
+
+
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]

@@ -1,0 +1,183 @@
+
+----------------------------------------------------------------------
+  fp32:
+----------------------------------------------------------------------
+
+  ***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.5388
+  train_runtime            = 0:06:54.69
+  train_samples            =       4771
+  train_samples_per_second =     34.515
+  train_steps_per_second   =      2.163
+01/09/2023 01:05:37 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 01:05:37,888 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 01:05:37,890 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 01:05:37,890 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 01:05:37,890 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:07<00:00,  4.04it/s]
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6394
+  eval_loss               =     1.8641
+  eval_runtime            = 0:00:07.92
+  eval_samples            =        493
+  eval_samples_per_second =      62.22
+  eval_steps_per_second   =      3.912
+  perplexity              =     6.4503
+
+----------------------------------------------------------------------
+  hbfp8_64:
+----------------------------------------------------------------------
+
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.5396
+  train_runtime            = 0:10:02.45
+  train_samples            =       4771
+  train_samples_per_second =     23.758
+  train_steps_per_second   =      1.489
+01/09/2023 00:23:22 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 00:23:22,660 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 00:23:22,662 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 00:23:22,662 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 00:23:22,662 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:10<00:00,  3.08it/s]
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =      0.639
+  eval_loss               =     1.8632
+  eval_runtime            = 0:00:10.40
+  eval_samples            =        493
+  eval_samples_per_second =     47.401
+  eval_steps_per_second   =      2.981
+  perplexity              =     6.4445
+
+----------------------------------------------------------------------
+  hbfp6_64:
+----------------------------------------------------------------------
+
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.7337
+  train_runtime            = 0:10:07.38
+  train_samples            =       4771
+  train_samples_per_second =     23.565
+  train_steps_per_second   =      1.477
+01/09/2023 01:31:23 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 01:31:23,037 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 01:31:23,041 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 01:31:23,041 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 01:31:23,041 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:10<00:00,  3.01it/s]
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =        0.6
+  eval_loss               =     2.1938
+  eval_runtime            = 0:00:10.63
+  eval_samples            =        493
+  eval_samples_per_second =     46.351
+  eval_steps_per_second   =      2.915
+  perplexity              =     8.9696
+
+----------------------------------------------------------------------
+  hbfp6_16:
+----------------------------------------------------------------------
+
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.6285
+  train_runtime            = 0:10:22.46
+  train_samples            =       4771
+  train_samples_per_second =     22.994
+  train_steps_per_second   =      1.441
+01/09/2023 01:44:31 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 01:44:31,107 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 01:44:31,109 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 01:44:31,109 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 01:44:31,109 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:10<00:00,  2.97it/s]
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6126
+  eval_loss               =     2.0935
+  eval_runtime            = 0:00:10.79
+  eval_samples            =        493
+  eval_samples_per_second =     45.688
+  eval_steps_per_second   =      2.873
+  perplexity              =     8.1134
+
+----------------------------------------------------------------------
+  hbfp6_4:
+----------------------------------------------------------------------
+
+  ***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.5874
+  train_runtime            = 0:10:49.80
+  train_samples            =       4771
+  train_samples_per_second =     22.027
+  train_steps_per_second   =       1.38
+01/09/2023 01:58:24 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 01:58:24,004 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 01:58:24,006 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 01:58:24,006 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 01:58:24,007 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:10<00:00,  2.85it/s]
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6237
+  eval_loss               =     1.9853
+  eval_runtime            = 0:00:11.22
+  eval_samples            =        493
+  eval_samples_per_second =     43.912
+  eval_steps_per_second   =      2.761
+  perplexity              =     7.2811
+
+----------------------------------------------------------------------
+  hbfp6_64 - 10 epochs:
+----------------------------------------------------------------------
+
+  ***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =     1.9222
+  train_runtime            = 0:33:51.18
+  train_samples            =       4771
+  train_samples_per_second =     23.489
+  train_steps_per_second   =      1.472
+01/09/2023 02:38:18 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 02:38:18,644 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 02:38:18,646 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 02:38:18,646 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 02:38:18,647 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:10<00:00,  3.04it/s]
+***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6783
+  eval_loss               =     1.5676
+  eval_runtime            = 0:00:10.54
+  eval_samples            =        493
+  eval_samples_per_second =     46.754
+  eval_steps_per_second   =       2.94
+  perplexity              =     4.7951***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =     1.7998
+  train_runtime            = 0:23:13.75
+  train_samples            =       4771
+  train_samples_per_second =     34.231
+  train_steps_per_second   =      2.145
+01/09/2023 04:40:58 - INFO - __main__ - *** Evaluate ***
+[INFO|trainer.py:714] 2023-01-09 04:40:58,064 >> The following columns in the evaluation set don't have a corresponding argument in `BertForMaskedLM.forward` and have been ignored: special_tokens_mask. If special_tokens_mask are not expected by `BertForMaskedLM.forward`,  you can safely ignore this message.
+[INFO|trainer.py:2965] 2023-01-09 04:40:58,066 >> ***** Running Evaluation *****
+[INFO|trainer.py:2967] 2023-01-09 04:40:58,066 >>   Num examples = 493
+[INFO|trainer.py:2970] 2023-01-09 04:40:58,066 >>   Batch size = 16
+100%|██████████████████████████████████████████████████████████████████████████████████████████████| 31/31 [00:07<00:00,  4.06it/s]
+***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6873
+  eval_loss               =     1.5052
+  eval_runtime            = 0:00:07.88
+  eval_samples            =        493
+  eval_samples_per_second =     62.561
+  eval_steps_per_second   =      3.934
+  perplexity              =      4.505
