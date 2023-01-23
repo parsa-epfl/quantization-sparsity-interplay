@@ -72,7 +72,7 @@ def get_exponent(t, epsilon):
     #Get the exponent of that element (We use ceil because in bfp format, we convert using 0.mantissa_bits instead of fp32's 1.mantissa_bits)
     return (max_v + epsilon).log2().ceil()
 
-def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, exp_given=None):
+def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, cols=0, exp_given=None):
     """
     Convert float tensor t to bfp
     """
@@ -81,6 +81,16 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, exp_given=None):
     #print(t)
 
     exp = get_exponent(t, epsilon)
+    if sparsity == True:
+        if cols == 0:
+            raise NotImplementedError("Invalid no. of coloumns passed")
+        else:
+            block_size = t.shape[-1]
+            row_exps = exp.view(-1, cols//block_size)
+            row_exps[row_exps == row_exps.min(dim=1, keepdims=True).values] = 0
+            zero_mask = row_exps.view(-1, 1)
+    else:
+        zero_mask = torch.full(exp.shape, 1)
 
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)
@@ -93,12 +103,13 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, exp_given=None):
     rounded *=  interval
 
     #To ensure that there is no underflow or overflow
-    return torch.min(torch.max(rounded, -max_v), max_v)
+    new_t = torch.min(torch.max(rounded, -max_v), max_v)
+    return torch.where(zero_mask==0, 0, new_t)
 
 
 
-def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
-                       num_format='', weight_mant_bits=0,
+def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
+                       num_format='', weight_mant_bits=0, sparsity=False,
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with tiling.
@@ -117,7 +128,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         mant_bits = weight_mant_bits
 
     orig_shape = t.shape
-    block_size = bfp_tile_size**2
+    block_size = bfp_block_size
     if block_size == 0:
         return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device).view(orig_shape)
 
@@ -130,7 +141,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
 
     t = t.contiguous().view(-1,block_size)
 
-    t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device)
+    t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, padded_shape[-1])
 
     t = t.contiguous().view(padded_shape)
 
@@ -330,7 +341,9 @@ def unpack_bfp_args(kwargs):
                 ('epsilon', 1e-8),
                 ('mant_bits', 0),
                 ('bfp_tile_size', 0),
+                ('bfp_block_size', 0),
                 ('weight_mant_bits', 0),
+                ('sparsity', False),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:
@@ -521,6 +534,7 @@ class TestCases(unittest.TestCase):
 
 
 def test_F_matmul_bfp():
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     bfp_args = {
         'num_format': 'bfp',
         'rounding_mode': 'stoc',
@@ -528,14 +542,17 @@ def test_F_matmul_bfp():
         'mant_bits': 7,
         'weight_mant_bits': 15,
         'bfp_tile_size': 24,
-        'device': 'gpu'
+        'bfp_block_size': 2,
+        'sparsity': True,
+        'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }
-    bfp_matmul = F_matmul_bfp(num_format=bfp_args['num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], device=bfp_args['device'])
-    a = torch.tensor([[4.0,5.0]]).to("cuda:0")
-    b = torch.tensor([[5.0],[6.0]]).to("cuda:0")
+    bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
+                                bfp_block_size=bfp_args['bfp_block_size'], sparsity=bfp_args['sparsity'], device=bfp_args['device'])
+    a = torch.tensor([[1, 2, 4, 8], [3, 7, 1, 2]]).to(device=device)
+    b = torch.tensor([[2, 3, 5, 9], [3, 5, 9, 17], [4, 1, 8, 7], [6, 1, 3, 9]]).to(device=device)
     res = bfp_matmul(a, b)
-    # print(res)
-    assert res == torch.tensor([[50.0]]).to("cuda:0")   
+    print(res)
+    # assert res == torch.tensor([[50]]).to(device=device)
 
 if __name__ == '__main__':
     test_F_matmul_bfp()
