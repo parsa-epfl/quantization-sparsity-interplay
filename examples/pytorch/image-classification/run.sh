@@ -1,6 +1,6 @@
-for datatype in fp32 bfp
+for datatype in bfp fp32
 do
-   if [ $datatype$ == "bfp" ]
+   if [ $datatype == "bfp" ]
    then
       for mantbit in 3 5 7
       do
