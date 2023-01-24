@@ -1,4 +1,4 @@
-for datatype in bfp fp32
+for datatype in fp32 bfp
 do
    if [ $datatype == "bfp" ]
    then
@@ -18,8 +18,8 @@ do
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
          python3 run_image_classification.py  \
-            --dataset_name cifar100  \
-            --output_dir ./cifar100_hbfp$manbit\_sparse,64/  \
+            --dataset_name cifar10  \
+            --output_dir ./sparse_results/cifar10_hbfp$mantbit\_sparse,64/  \
             --overwrite_output_dir \
             --remove_unused_columns False  \
             --do_train  \
@@ -40,7 +40,7 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee cifar100_hbfp$manbit\_sparse,64.txt
+            --optim sgd | tee ./sparse_results/cifar10_hbfp$mantbit\_sparse,64.txt
 
          rm ../../../src/transformers/bfp/bfp_config.yaml
          echo -e "hbfp:
@@ -56,8 +56,8 @@ do
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
          python3 run_image_classification.py  \
-            --dataset_name cifar100  \
-            --output_dir ./cifar100_hbfp$manbit,64/  \
+            --dataset_name cifar10  \
+            --output_dir ./sparse_results/cifar10_hbfp$mantbit,64/  \
             --overwrite_output_dir \
             --remove_unused_columns False  \
             --do_train  \
@@ -78,7 +78,7 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee cifar100_hbfp$manbit,64.txt
+            --optim sgd | tee ./sparse_results/cifar10_hbfp$mantbit,64.txt
       done
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
@@ -95,8 +95,8 @@ do
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       python3 run_image_classification.py  \
-            --dataset_name cifar100  \
-            --output_dir ./cifar100_fp32_sparse/  \
+            --dataset_name cifar10  \
+            --output_dir ./sparse_results/cifar10_fp32_sparse/  \
             --overwrite_output_dir \
             --remove_unused_columns False  \
             --do_train  \
@@ -117,7 +117,7 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee cifar100_fp32_sparse.txt
+            --optim sgd | tee ./sparse_results/cifar10_fp32_sparse.txt
 
       rm ../../../src/transformers/bfp/bfp_config.yaml
       echo -e "hbfp: 
@@ -133,8 +133,8 @@ do
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       python3 run_image_classification.py  \
-            --dataset_name cifar100  \
-            --output_dir ./cifar100_fp32/  \
+            --dataset_name cifar10  \
+            --output_dir ./sparse_results/cifar10_fp32/  \
             --overwrite_output_dir \
             --remove_unused_columns False  \
             --do_train  \
@@ -155,6 +155,6 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee cifar100_fp32.txt
+            --optim sgd | tee ./sparse_results/cifar10_fp32.txt
    fi
 done
