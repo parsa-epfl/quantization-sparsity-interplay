@@ -5,7 +5,7 @@ do
       for mantbit in 3 5 7
       do
          rm ../../../src/transformers/bfp/bfp_config.yaml
-         echo -e "hbfp: \n\t num_format: 'bfp' \n\t rounding_mode: 'stoc' \n\t epsilon: 0.00000001 \n\t mant_bits: $mantbit \n\t weight_mant_bits: 15 \n\t bfp_tile_size: 8 \n\t bfp_block_size: 64 \n\t in_sparsity: False \n\t w_sparsity: True \n\t grad_sparsity: False \n\t device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+         echo -e "hbfp: num_format: 'bfp' rounding_mode: 'stoc' epsilon: 0.00000001 mant_bits: $mantbit weight_mant_bits: 15 bfp_tile_size: 8 bfp_block_size: 64 in_sparsity: False w_sparsity: True grad_sparsity: False device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
          python3 run_image_classification.py  \
             --dataset_name cifar100  \
             --output_dir ./cifar100_hbfp$manbit\_sparse,64/  \
@@ -32,7 +32,7 @@ do
             --optim sgd | tee cifar100_hbfp$manbit\_sparse,64.txt
 
          rm ../../../src/transformers/bfp/bfp_config.yaml
-         echo -e "hbfp: \n\t num_format: 'bfp' \n\t rounding_mode: 'stoc' \n\t epsilon: 0.00000001 \n\t mant_bits: $mantbit \n\t weight_mant_bits: 15 \n\t bfp_tile_size: 8 \n\t bfp_block_size: 64 \n\t in_sparsity: False \n\t w_sparsity: False \n\t grad_sparsity: False \n\t device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+         echo -e "hbfp: num_format: 'bfp' rounding_mode: 'stoc' epsilon: 0.00000001 mant_bits: $mantbit weight_mant_bits: 15 bfp_tile_size: 8 bfp_block_size: 64 in_sparsity: False w_sparsity: False grad_sparsity: False device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
          python3 run_image_classification.py  \
             --dataset_name cifar100  \
             --output_dir ./cifar100_hbfp$manbit,64/  \
@@ -60,7 +60,7 @@ do
       done
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
-      echo -e "hbfp: \n\t num_format: 'fp32' \n\t rounding_mode: 'stoc' \n\t epsilon: 0.00000001 \n\t mant_bits: 7 \n\t weight_mant_bits: 15 \n\t bfp_tile_size: 8 \n\t bfp_block_size: 64 \n\t in_sparsity: False \n\t w_sparsity: True \n\t grad_sparsity: False \n\t device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+      echo -e "hbfp: num_format: 'fp32' rounding_mode: 'stoc' epsilon: 0.00000001 mant_bits: 7 weight_mant_bits: 15 bfp_tile_size: 8 bfp_block_size: 64 in_sparsity: False w_sparsity: True grad_sparsity: False device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       python3 run_image_classification.py  \
             --dataset_name cifar100  \
             --output_dir ./cifar100_fp32_sparse/  \
@@ -87,7 +87,7 @@ do
             --optim sgd | tee cifar100_fp32_sparse.txt
 
       rm ../../../src/transformers/bfp/bfp_config.yaml
-      echo -e "hbfp: \n\t num_format: 'fp32' \n\t rounding_mode: 'stoc' \n\t epsilon: 0.00000001 \n\t mant_bits: 7 \n\t weight_mant_bits: 15 \n\t bfp_tile_size: 8 \n\t bfp_block_size: 64 \n\t in_sparsity: False \n\t w_sparsity: False \n\t grad_sparsity: False \n\t device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+      echo -e "hbfp: num_format: 'fp32' rounding_mode: 'stoc' epsilon: 0.00000001 mant_bits: 7 weight_mant_bits: 15 bfp_tile_size: 8 bfp_block_size: 64 in_sparsity: False w_sparsity: False grad_sparsity: False device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       python3 run_image_classification.py  \
             --dataset_name cifar100  \
             --output_dir ./cifar100_fp32/  \
