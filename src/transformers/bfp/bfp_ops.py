@@ -90,7 +90,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
             row_exps[row_exps == row_exps.min(dim=1, keepdims=True).values] = 0
             zero_mask = row_exps.view(-1, 1)
     else:
-        zero_mask = torch.full(exp.shape, 1)
+        zero_mask = torch.full(exp.shape, 1).to(device=device)
 
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)
@@ -103,7 +103,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     rounded *=  interval
 
     #To ensure that there is no underflow or overflow
-    new_t = torch.min(torch.max(rounded, -max_v), max_v)
+    new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
     return torch.where(zero_mask==0, 0, new_t)
 
 
@@ -118,7 +118,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     threshold = 32.0
     outliers = torch.where(t > threshold, 1, 0)
     o_count = torch.sum(outliers)
-    print(f'outliers: {o_count}')
+    # print(f'outliers: {o_count}')
     if o_count > 0:
         print(f'tensor size: {t.shape}')
         torch.set_printoptions(threshold=10000000)

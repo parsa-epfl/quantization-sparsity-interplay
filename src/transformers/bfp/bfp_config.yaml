@@ -9,4 +9,4 @@ hbfp:
   in_sparsity: False
   w_sparsity: True
   grad_sparsity: False
-  device: 'gpu'
+  device: 'cuda'
