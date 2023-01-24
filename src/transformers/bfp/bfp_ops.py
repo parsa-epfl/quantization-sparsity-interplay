@@ -127,7 +127,6 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     if sgd_update:
         mant_bits = weight_mant_bits
 
-    print("sdfsdfsdfsdf")
     orig_shape = t.shape
     block_size = bfp_block_size
     if block_size == 0:
@@ -172,7 +171,6 @@ def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     o = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device)
     return o.view(orig_shape)
     """
-    print("hello")
     assert num_format == 'bfp'
     orig_shape = t.size()
     print(orig_shape)
@@ -186,7 +184,6 @@ def float_to_bfp_batched_weight(t, mant_bits, epsilon, rounding_mode, device, bf
     """
     Convert a batch of fp32 tensor t to bfp
     """
-    print("dfdsfshello")
     assert num_format == 'bfp'
     orig_shape = t.size()
 
@@ -251,7 +248,6 @@ def float_to_bfp_tiled(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_si
     Convert fp32 tensor t to bfp with tiling.
     Used for weights (which are handled in the optimizer)
     """
-    print("sdfsdfsrndom")
     assert num_format == 'bfp'
     if sgd_update:
         mant_bits = weight_mant_bits
