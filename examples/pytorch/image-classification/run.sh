@@ -17,6 +17,9 @@ do
    w_sparsity: True 
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+         cd ../../../
+         pip install -e .
+         cd examples/pytorch/image-classification/
          python3 run_image_classification.py  \
             --dataset_name cifar10  \
             --output_dir ./sparse_results/cifar10_hbfp$mantbit\_sparse,64/  \
@@ -40,7 +43,7 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee ./sparse_results/cifar10_hbfp$mantbit\_sparse,64.txt
+            --optim BFPAdam | tee ./sparse_results/cifar10_hbfp$mantbit\_sparse,64.txt
 
          rm ../../../src/transformers/bfp/bfp_config.yaml
          echo -e "hbfp:
@@ -55,6 +58,9 @@ do
    w_sparsity: False 
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+         cd ../../../
+         pip install -e .
+         cd examples/pytorch/image-classification/
          python3 run_image_classification.py  \
             --dataset_name cifar10  \
             --output_dir ./sparse_results/cifar10_hbfp$mantbit,64/  \
@@ -78,7 +84,7 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee ./sparse_results/cifar10_hbfp$mantbit,64.txt
+            --optim BFPAdam | tee ./sparse_results/cifar10_hbfp$mantbit,64.txt
       done
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
@@ -94,6 +100,9 @@ do
    w_sparsity: False 
    grad_sparsity: False 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+      cd ../../../
+      pip install -e .
+      cd examples/pytorch/image-classification/
       python3 run_image_classification.py  \
             --dataset_name cifar10  \
             --output_dir ./sparse_results/cifar10_fp32/  \
@@ -117,6 +126,6 @@ do
             --adam_beta2 0.999  \
             --adam_epsilon 1e-08  \
             --lr_scheduler_type linear \
-            --optim sgd | tee ./sparse_results/cifar10_fp32.txt
+            --optim BFPAdam | tee ./sparse_results/cifar10_fp32.txt
    fi
 done
