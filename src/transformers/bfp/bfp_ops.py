@@ -109,7 +109,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
 
 
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
-                       num_format='', weight_mant_bits=0, sparsity=False,
+                       num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, identifier='',
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with tiling.
@@ -140,6 +140,15 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         padded_shape[-1] = orig_shape[-1]+pad_size
 
     t = t.contiguous().view(-1,block_size)
+
+    if in_sparsity == True and identifier == 'in':
+        sparsity = True
+    elif w_sparsity == True and identifier == 'w':
+        sparsity = True
+    elif grad_sparsity == True and identifier == 'grad':
+        sparsity = True
+    else:
+        sparsity = False
 
     t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, padded_shape[-1])
 
@@ -287,7 +296,7 @@ def _gen_bfp_op(op, name, bfp_args):
     class NewOpIn(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x, w):
-            return (float_to_bfp_blocked(x, **bfp_args), float_to_bfp_blocked(w, **bfp_args))
+            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
 
         @staticmethod
         def backward(ctx, grad_x, grad_w):
@@ -303,7 +312,7 @@ def _gen_bfp_op(op, name, bfp_args):
 
         @staticmethod
         def backward(ctx, op_out_grad):
-            return float_to_bfp_blocked(op_out_grad, **bfp_args)
+            return float_to_bfp_blocked(op_out_grad, **bfp_args, identifier='grad')
 
     NewOpOut.__name__ = name + '_Out'
     new_op_out = NewOpOut.apply
@@ -343,7 +352,9 @@ def unpack_bfp_args(kwargs):
                 ('bfp_tile_size', 0),
                 ('bfp_block_size', 0),
                 ('weight_mant_bits', 0),
-                ('sparsity', False),
+                ('in_sparsity', False),
+                ('w_sparsity', False),
+                ('grad_sparsity', False),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:
@@ -543,11 +554,14 @@ def test_F_matmul_bfp():
         'weight_mant_bits': 15,
         'bfp_tile_size': 24,
         'bfp_block_size': 2,
-        'sparsity': True,
+        'in_sparsity': False,
+        'w_sparsity': True,
+        'grad_sparsity': False,
         'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }
     bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
-                                bfp_block_size=bfp_args['bfp_block_size'], sparsity=bfp_args['sparsity'], device=bfp_args['device'])
+                                bfp_block_size=bfp_args['bfp_block_size'], in_sparsity=bfp_args['in_sparsity'], w_sparsity=bfp_args['w_sparsity'], 
+                                grad_sparsity=bfp_args['grad_sparsity'], device=bfp_args['device'])
     a = torch.tensor([[1, 2, 4, 8], [3, 7, 1, 2]]).to(device=device)
     b = torch.tensor([[2, 3, 5, 9], [3, 5, 9, 17], [4, 1, 8, 7], [6, 1, 3, 9]]).to(device=device)
     res = bfp_matmul(a, b)
@@ -556,4 +570,4 @@ def test_F_matmul_bfp():
 
 if __name__ == '__main__':
     test_F_matmul_bfp()
-    unittest.main(verbosity=2)
+    # unittest.main(verbosity=2)
