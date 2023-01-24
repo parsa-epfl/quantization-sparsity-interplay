@@ -1,8 +1,12 @@
 hbfp:
-  num_format: fp32 
+  num_format: fp32
   rounding_mode: stoc
   epsilon: 0.00000001
   mant_bits: 7
   weight_mant_bits: 15
   bfp_tile_size: 8
+  bfp_block_size: 64
+  in_sparsity: False
+  w_sparsity: False
+  grad_sparsity: False
   device: gpu
