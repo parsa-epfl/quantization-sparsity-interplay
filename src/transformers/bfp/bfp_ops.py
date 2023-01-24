@@ -150,7 +150,11 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     else:
         sparsity = False
 
+    if identifier == 'w':
+        print(f'Before Sparsity: {t}')
     t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, padded_shape[-1])
+    if identifier == 'w':
+        print(f'After Sparsity: {t}')
 
     t = t.contiguous().view(padded_shape)
 
