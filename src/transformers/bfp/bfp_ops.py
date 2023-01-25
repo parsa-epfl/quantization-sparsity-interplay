@@ -81,16 +81,10 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     #print(t)
 
     exp = get_exponent(t, epsilon)
+    _, sparse_idx = torch.topk(-exp, k=exp.shape[0]//2, dim=0)
+    zero_mask = torch.full(exp.shape, 1).to(device=device)
     if sparsity == True:
-        if cols == 0:
-            raise NotImplementedError("Invalid no. of coloumns passed")
-        else:
-            block_size = t.shape[-1]
-            row_exps = exp.view(-1, cols//block_size)
-            row_exps[row_exps == row_exps.min(dim=1, keepdims=True).values] = 0
-            zero_mask = row_exps.view(-1, 1)
-    else:
-        zero_mask = torch.full(exp.shape, 1).to(device=device)
+        zero_mask.scatter_(index=sparse_idx, dim=0, value=0)
 
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)
@@ -106,23 +100,49 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
     return torch.where(zero_mask==0, 0, new_t)
 
+    # exp = get_exponent(t, epsilon)
+    # if sparsity == True:
+    #     if cols == 0:
+    #         raise NotImplementedError("Invalid no. of coloumns passed")
+    #     else:
+    #         block_size = t.shape[-1]
+    #         row_exps = exp.view(-1, cols//block_size)
+    #         row_exps[row_exps == row_exps.min(dim=1, keepdims=True).values] = 0
+    #         zero_mask = row_exps.view(-1, 1)
+    # else:
+    #     zero_mask = torch.full(exp.shape, 1).to(device=device)
+
+    # #The interval between two consecutive numbers with that exponent value
+    # interval = torch.pow(2.0, exp-mant_bits)
+    # #The maximum representable value with exp
+    # max_v = torch.pow(2.0, exp) - interval
+
+    # # To ensure that we preserve the interval
+    # t = t/interval
+    # rounded = round_tensor(t, rounding_mode, device)
+    # rounded *=  interval
+
+    # #To ensure that there is no underflow or overflow
+    # new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
+    # return torch.where(zero_mask==0, 0, new_t)
+
 
 
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
                        num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, identifier='',
                        sgd_update=False, mant_bits_pow=None):
     """
-    Convert fp32 tensor t to bfp with tiling.
+    Convert fp32 tensor t to bfp with blocks.
     Used for weights (which are handled in the optimizer)
     """
-    threshold = 32.0
-    outliers = torch.where(t > threshold, 1, 0)
-    o_count = torch.sum(outliers)
+    # threshold = 32.0
+    # outliers = torch.where(t > threshold, 1, 0)
+    # o_count = torch.sum(outliers)
     # print(f'outliers: {o_count}')
-    if o_count > 0:
-        print(f'tensor size: {t.shape}')
-        torch.set_printoptions(threshold=10000000)
-        print((outliers == 1).nonzero(as_tuple=False))
+    # if o_count > 0:
+    #    print(f'tensor size: {t.shape}')
+    #    torch.set_printoptions(threshold=10000000)
+    #    print((outliers == 1).nonzero(as_tuple=False))
     assert num_format == 'bfp'
     if sgd_update:
         mant_bits = weight_mant_bits
