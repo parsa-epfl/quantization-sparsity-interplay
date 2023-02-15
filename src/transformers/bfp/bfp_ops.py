@@ -72,7 +72,7 @@ def get_exponent(t, epsilon):
     #Get the exponent of that element (We use ceil because in bfp format, we convert using 0.mantissa_bits instead of fp32's 1.mantissa_bits)
     return (max_v + epsilon).log2().ceil()
 
-def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, cols=0, exp_given=None):
+def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, sparsity_frac=0, cols=0, exp_given=None):
     """
     Convert float tensor t to bfp
     """
@@ -80,8 +80,9 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     #print(t.shape)
     #print(t)
 
+    # Sparsity scheme 1: Zero out the k% of the blocks with minimal exponents
     exp = get_exponent(t, epsilon)
-    _, sparse_idx = torch.topk(-exp, k=exp.shape[0]//2, dim=0)
+    _, sparse_idx = torch.topk(exp, k=int(exp.shape[0]*sparsity_frac), largest=False, dim=0)
     zero_mask = torch.full(exp.shape, 1).to(device=device)
     if sparsity == True:
         zero_mask.scatter_(index=sparse_idx, dim=0, value=0)
@@ -100,6 +101,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
     return torch.where(zero_mask==0, 0, new_t)
 
+    # # Sparsity scheme 2: In each row, zero out the block with lowest exponent
     # exp = get_exponent(t, epsilon)
     # if sparsity == True:
     #     if cols == 0:
@@ -126,40 +128,16 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     # new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
     # return torch.where(zero_mask==0, 0, new_t)
 
-
-
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
-                       num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, identifier='',
+                       num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, 
+                       sparsity_frac=0, sparsity_num_format='bfp', identifier='',
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with blocks.
     Used for weights (which are handled in the optimizer)
     """
-    # threshold = 32.0
-    # outliers = torch.where(t > threshold, 1, 0)
-    # o_count = torch.sum(outliers)
-    # print(f'outliers: {o_count}')
-    # if o_count > 0:
-    #    print(f'tensor size: {t.shape}')
-    #    torch.set_printoptions(threshold=10000000)
-    #    print((outliers == 1).nonzero(as_tuple=False))
+
     assert num_format == 'bfp'
-    if sgd_update:
-        mant_bits = weight_mant_bits
-
-    orig_shape = t.shape
-    block_size = bfp_block_size
-    if block_size == 0:
-        return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device).view(orig_shape)
-
-    padded_shape = list(orig_shape)
-
-    if orig_shape[-1] % block_size != 0:
-        pad_size = block_size - (orig_shape[-1] % block_size)
-        t = F.pad(t, (0,pad_size),'constant')
-        padded_shape[-1] = orig_shape[-1]+pad_size
-
-    t = t.contiguous().view(-1,block_size)
 
     if in_sparsity == True and identifier == 'in':
         sparsity = True
@@ -170,16 +148,44 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     else:
         sparsity = False
 
-    # if identifier == 'w':
-    #     print(f'Before Sparsity: {t}')
-    t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, padded_shape[-1])
-    # if identifier == 'w':
-    #     print(f'After Sparsity: {t}')
+    assert ((sparsity==False) or ((sparsity==True)and(sparsity_frac!=0)))
 
-    t = t.contiguous().view(padded_shape)
+    if sparsity_num_format == 'fp32':
+        temp = t.contiguous().view(1, -1).float()
+        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
+        zero_mask = torch.full(temp.shape, 1).to(device=device)
 
-    return t.narrow(-1,0,orig_shape[-1])
+        if sparsity == True:
+            zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
 
+        temp = torch.where(zero_mask==0, 0, temp)
+        return temp.contiguous().view(t.shape)
+
+    elif sparsity_num_format == 'bfp':
+
+        if sgd_update:
+            mant_bits = weight_mant_bits
+
+        orig_shape = t.shape
+        block_size = bfp_block_size
+        if block_size == 0:
+            return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac).view(orig_shape)
+
+        padded_shape = list(orig_shape)
+
+        if orig_shape[-1] % block_size != 0:
+            pad_size = block_size - (orig_shape[-1] % block_size)
+            t = F.pad(t, (0,pad_size),'constant')
+            padded_shape[-1] = orig_shape[-1]+pad_size
+
+        t = t.contiguous().view(-1,block_size)
+        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
+        t = t.contiguous().view(padded_shape)
+
+        return t.narrow(-1,0,orig_shape[-1])
+
+    else:
+        raise NotImplementedError('NumFormat not implemented')
 
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
@@ -370,6 +376,7 @@ def unpack_bfp_args(kwargs):
     """
     bfp_args = {}
     bfp_argn = [('num_format', 'fp32'),
+                ('sparsity_num_format', 'fp32'),
                 ('rounding_mode', 'stoc'),
                 ('epsilon', 1e-8),
                 ('mant_bits', 0),
@@ -379,6 +386,7 @@ def unpack_bfp_args(kwargs):
                 ('in_sparsity', False),
                 ('w_sparsity', False),
                 ('grad_sparsity', False),
+                ('sparsity_frac', 0),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:
@@ -572,6 +580,7 @@ def test_F_matmul_bfp():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     bfp_args = {
         'num_format': 'bfp',
+        'sparsity_num_format': 'fp32',
         'rounding_mode': 'stoc',
         'epsilon': 0.00000001,
         'mant_bits': 7,
@@ -581,11 +590,12 @@ def test_F_matmul_bfp():
         'in_sparsity': False,
         'w_sparsity': True,
         'grad_sparsity': False,
+        'sparsity_frac': 0.50,
         'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }
-    bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
+    bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], sparsity_num_format=bfp_args['sparsity_num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
                                 bfp_block_size=bfp_args['bfp_block_size'], in_sparsity=bfp_args['in_sparsity'], w_sparsity=bfp_args['w_sparsity'], 
-                                grad_sparsity=bfp_args['grad_sparsity'], device=bfp_args['device'])
+                                grad_sparsity=bfp_args['grad_sparsity'], sparsity_frac=bfp_args['sparsity_frac'], device=bfp_args['device'])
     a = torch.tensor([[1, 2, 4, 8], [3, 7, 1, 2]]).to(device=device)
     b = torch.tensor([[2, 3, 5, 9], [3, 5, 9, 17], [4, 1, 8, 7], [6, 1, 3, 9]]).to(device=device)
     res = bfp_matmul(a, b)
