@@ -1,17 +1,21 @@
 blocksize=2
 mantbits=7
-# sparsity_frac=0.4
-sparsity_num_format=bfp
+sparsity_frac=0.65
+sparsity_num_format=fp32
 benchmark=cifar10
-for sparsity_frac in 0.4 0.3
-do
-# for sparsity_num_format in fp32 bfp
+rearrange=False
+# for sparsity_frac in 0.7 0.8 0.4
+# do
+# for blocksize in 2 4 8 16 32
+# do
+# for mantbits in 6 4
 # do
    if [ $sparsity_num_format == "fp32" ]
    then
       filename=$sparsity_num_format/$sparsity_frac\_percent
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+      mkdir ./sparse_results/$benchmark/sparsity_scheme1/$sparsity_num_format\_block\_size\_$blocksize/
       mkdir ./sparse_results/$benchmark/sparsity_scheme1/$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/
    fi
 
@@ -28,6 +32,7 @@ do
    in_sparsity: False
    w_sparsity: True 
    grad_sparsity: False
+   rearrange: $rearrange
    sparsity_frac: $sparsity_frac 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
    cd ../../../
@@ -57,5 +62,6 @@ do
       --adam_epsilon 1e-08  \
       --lr_scheduler_type linear \
       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme1/$filename.txt
-done
+# done
+# done
 # done

@@ -129,16 +129,13 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     # return torch.where(zero_mask==0, 0, new_t)
 
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
-                       num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, 
-                       sparsity_frac=0, sparsity_num_format='bfp', identifier='', transpose=False,
+                       num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, rearrange=False, 
+                       sparsity_frac=0, sparsity_num_format='bfp', identifier='',
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with blocks.
     Used for weights (which are handled in the optimizer)
     """
-
-    if transpose == True:
-        t = t.transpose(-1, -2)
 
     assert num_format == 'bfp'
 
@@ -162,10 +159,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
 
         temp = torch.where(zero_mask==0, 0, temp)
-        if transpose == True:
-            return temp.contiguous().view(t.shape).transpose(-1, -2)
-        else:
-            return temp.contiguous().view(t.shape)
+        return temp.contiguous().view(t.shape)
 
     elif sparsity_num_format == 'bfp':
         if sgd_update:
@@ -187,54 +181,55 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
         t = t.contiguous().view(padded_shape)
 
-        if transpose == True:
-            return t.narrow(-1,0,orig_shape[-1]).transpose(-1, -2)
-        else:
-            return t.narrow(-1,0,orig_shape[-1])
+        return t.narrow(-1,0,orig_shape[-1])
     else:
         raise NotImplementedError('NumFormat not implemented')
 
 def calc_score(mat, device):
     new_mat = torch.abs(mat)
-    n_rows, n_cols = new_mat.shape[-2], new_mat.shape[-1]
-    new_mat = torch.reshape(new_mat, (-1, n_rows, n_cols))
-    # print("New Matrix Shape = {}".format(new_mat.shape))
-    score_mat_dims = list(new_mat.shape)[:-1]
-    score_mat = torch.zeros(score_mat_dims).to(device)
-    # print("Score Matrix Shape = {}".format(score_mat.shape))
-    for idx in range(0, n_rows):
-        row1 = new_mat[:, idx]
-        for jdx in range(idx+1, n_rows):
-            # print(jdx)
-            row2 = new_mat[:, jdx]
-            comp1 = torch.le(row1, row2)
-            comp2 = torch.le(row2, row1)
-            score_mat[:, idx] += torch.sum(comp1, dim = -1).to(device)
-            score_mat[:, jdx] += torch.sum(comp2, dim = -1).to(device)
-    score_mat = torch.reshape(score_mat, list(mat.shape)[:-1])
+    n_cols = mat.shape[-1]
+    score_mat = torch.zeros(mat.shape[0], n_cols).to(device)
+    for idx in range(0, n_cols):
+        col1 = new_mat[:, :, idx]
+        for jdx in range(idx+1, n_cols):
+            col2 = new_mat[:, :, jdx]
+            comp1 = torch.le(col1, col2)
+            comp2 = torch.le(col2, col1)
+            score_mat[:, idx] += torch.sum(comp1, dim = -1)
+            score_mat[:, jdx] += torch.sum(comp2, dim = -1)
     return score_mat
 
-def rearrange_mats(matA, matB, transpose, device):
-    score_mat = calc_score(matA, device)
-    # print("Score Matrix Shape = {}".format(score_mat.shape))
+def rearrange_mats(matA, matB, device):
+    orig_shape_A, orig_shape_B = matA.shape, matB.shape
+    print(orig_shape_A, orig_shape_B)
+    matA = matA.reshape(-1, matA.shape[-2], matA.shape[-1])
+    matB = matB.reshape(-1, matB.shape[-2], matB.shape[-1])
+    
+    score_mat = calc_score(matB, device)
     max_idx = torch.argmax(score_mat, dim = -1)
-    # print("Max IDX: {}".format(max_idx))
-    # print("Max IDX Shape = {}".format(max_idx.shape))
-    sort_idx_order = torch.argsort(torch.abs(matA[max_idx]))
-    # print("Sort IDX shape = {}".format(sort_idx_order.shape))
-    temp_matA = torch.reshape(matA, (-1, matA.shape[-2], matA.shape[-1]))
-    temp_matB = torch.reshape(matB, (-1, matB.shape[-2], matB.shape[-1]))
-    # print("Temp Mat A Shape: {}".format(temp_matA.shape))
-    # print("Temp Mat B Shape: {}".format(temp_matB.shape))
-    # print("shshs shape: {}".format(temp_matA[:, :, sort_idx_order].shape))
-    # print("sdfsd shape: {}".format(temp_matB[:, :, sort_idx_order].shape))
-    new_matA = torch.reshape(temp_matA[:, :, sort_idx_order], matA.shape)
-    new_matB = torch.reshape(temp_matB[:, :, sort_idx_order], matB.shape)
-    return new_matA, new_matB
+    sort_idx = torch.abs(matB[torch.arange(matB.shape[0]), :, max_idx]).argsort(dim=-1)
+    matB = matB[torch.arange(matB.shape[0])[:, None], sort_idx]
+    matA = (torch.transpose(matA, -1, -2)[torch.arange(matA.shape[0])[:, None], sort_idx]).transpose(-1, -2)
+    
+    matA = matA.reshape(orig_shape_A)
+    matB = matB.reshape(orig_shape_B)
+    return matA, matB
 
 def MxM_pre_processing(x, w, transpose, **bfp_args):
     device = bfp_args['device']
-    return (float_to_bfp_blocked(x, **bfp_args, identifier='in', transpose=False), float_to_bfp_blocked(w, **bfp_args, identifier='w', transpose=transpose))
+    rearrange = bfp_args['rearrange']
+    if transpose == True:
+        if rearrange == True:
+            new_x, new_w = rearrange_mats(x, w, device)
+            return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), torch.transpose(float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'), -1, -2))
+        else:
+            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), torch.transpose(float_to_bfp_blocked(torch.transpose(w, -1, -2), **bfp_args, identifier='w'), -1, -2))
+    else:
+        if rearrange == True:
+            new_x, new_w = rearrange_mats(x, torch.transpose(w, -1, -2), device)
+            return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'))
+        else:
+            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
@@ -435,6 +430,7 @@ def unpack_bfp_args(kwargs):
                 ('in_sparsity', False),
                 ('w_sparsity', False),
                 ('grad_sparsity', False),
+                ('rearrange', False),
                 ('sparsity_frac', 0),
                 ('device', 'cpu')]
 
@@ -639,12 +635,13 @@ def test_F_matmul_bfp():
         'in_sparsity': False,
         'w_sparsity': True,
         'grad_sparsity': False,
+        'rearrange': False,
         'sparsity_frac': 0.50,
         'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }
     bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], sparsity_num_format=bfp_args['sparsity_num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
                                 bfp_block_size=bfp_args['bfp_block_size'], in_sparsity=bfp_args['in_sparsity'], w_sparsity=bfp_args['w_sparsity'], 
-                                grad_sparsity=bfp_args['grad_sparsity'], sparsity_frac=bfp_args['sparsity_frac'], device=bfp_args['device'])
+                                grad_sparsity=bfp_args['grad_sparsity'], rearrange=bfp_args['rearrange'], sparsity_frac=bfp_args['sparsity_frac'], device=bfp_args['device'])
     a = torch.tensor([[1, 2, 4, 8], [3, 7, 1, 2]]).to(device=device)
     b = torch.tensor([[2, 3, 5, 9], [3, 5, 9, 17], [4, 1, 8, 7], [6, 1, 3, 9]]).to(device=device)
     res = bfp_matmul(a, b)
