@@ -130,12 +130,15 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
 
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
                        num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, 
-                       sparsity_frac=0, sparsity_num_format='bfp', identifier='',
+                       sparsity_frac=0, sparsity_num_format='bfp', identifier='', transpose=False,
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with blocks.
     Used for weights (which are handled in the optimizer)
     """
+
+    if transpose == True:
+        t = t.transpose(-1, -2)
 
     assert num_format == 'bfp'
 
@@ -159,10 +162,12 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
 
         temp = torch.where(zero_mask==0, 0, temp)
-        return temp.contiguous().view(t.shape)
+        if transpose == True:
+            return temp.contiguous().view(t.shape).transpose(-1, -2)
+        else:
+            return temp.contiguous().view(t.shape)
 
     elif sparsity_num_format == 'bfp':
-
         if sgd_update:
             mant_bits = weight_mant_bits
 
@@ -182,11 +187,54 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
         t = t.contiguous().view(padded_shape)
 
-        return t.narrow(-1,0,orig_shape[-1])
-
+        if transpose == True:
+            return t.narrow(-1,0,orig_shape[-1]).transpose(-1, -2)
+        else:
+            return t.narrow(-1,0,orig_shape[-1])
     else:
         raise NotImplementedError('NumFormat not implemented')
 
+def calc_score(mat, device):
+    new_mat = torch.abs(mat)
+    n_rows, n_cols = new_mat.shape[-2], new_mat.shape[-1]
+    new_mat = torch.reshape(new_mat, (-1, n_rows, n_cols))
+    # print("New Matrix Shape = {}".format(new_mat.shape))
+    score_mat_dims = list(new_mat.shape)[:-1]
+    score_mat = torch.zeros(score_mat_dims).to(device)
+    # print("Score Matrix Shape = {}".format(score_mat.shape))
+    for idx in range(0, n_rows):
+        row1 = new_mat[:, idx]
+        for jdx in range(idx+1, n_rows):
+            # print(jdx)
+            row2 = new_mat[:, jdx]
+            comp1 = torch.le(row1, row2)
+            comp2 = torch.le(row2, row1)
+            score_mat[:, idx] += torch.sum(comp1, dim = -1).to(device)
+            score_mat[:, jdx] += torch.sum(comp2, dim = -1).to(device)
+    score_mat = torch.reshape(score_mat, list(mat.shape)[:-1])
+    return score_mat
+
+def rearrange_mats(matA, matB, transpose, device):
+    score_mat = calc_score(matA, device)
+    # print("Score Matrix Shape = {}".format(score_mat.shape))
+    max_idx = torch.argmax(score_mat, dim = -1)
+    # print("Max IDX: {}".format(max_idx))
+    # print("Max IDX Shape = {}".format(max_idx.shape))
+    sort_idx_order = torch.argsort(torch.abs(matA[max_idx]))
+    # print("Sort IDX shape = {}".format(sort_idx_order.shape))
+    temp_matA = torch.reshape(matA, (-1, matA.shape[-2], matA.shape[-1]))
+    temp_matB = torch.reshape(matB, (-1, matB.shape[-2], matB.shape[-1]))
+    # print("Temp Mat A Shape: {}".format(temp_matA.shape))
+    # print("Temp Mat B Shape: {}".format(temp_matB.shape))
+    # print("shshs shape: {}".format(temp_matA[:, :, sort_idx_order].shape))
+    # print("sdfsd shape: {}".format(temp_matB[:, :, sort_idx_order].shape))
+    new_matA = torch.reshape(temp_matA[:, :, sort_idx_order], matA.shape)
+    new_matB = torch.reshape(temp_matB[:, :, sort_idx_order], matB.shape)
+    return new_matA, new_matB
+
+def MxM_pre_processing(x, w, transpose, **bfp_args):
+    device = bfp_args['device']
+    return (float_to_bfp_blocked(x, **bfp_args, identifier='in', transpose=False), float_to_bfp_blocked(w, **bfp_args, identifier='w', transpose=transpose))
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
@@ -303,7 +351,7 @@ def _get_op_name(name, epsilon, mant_bits, rounding_mode, **kwargs):
     """
     return  '%s_BFP_%s_%d' % (name, rounding_mode, mant_bits)
 
-def _gen_bfp_op(op, name, bfp_args):
+def _gen_bfp_op(op, name, bfp_args, transpose=False):
     """
     Do the 'sandwich'
     With an original op:
@@ -326,7 +374,8 @@ def _gen_bfp_op(op, name, bfp_args):
     class NewOpIn(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x, w):
-            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            return MxM_pre_processing(x, w, transpose, **bfp_args)
 
         @staticmethod
         def backward(ctx, grad_x, grad_w):
@@ -358,14 +407,14 @@ def _gen_bfp_op(op, name, bfp_args):
 _bfp_ops = {}
 
 
-def _get_bfp_op(op, name, bfp_args):
+def _get_bfp_op(op, name, bfp_args, transpose=False):
     """
     Create the bfp version of the operation op
     This function is called when a bfp layer is defined. See BFPConv2d and BFPLinear below
     """
     op_name = _get_op_name(name, **bfp_args)
     if op_name not in _bfp_ops:
-        _bfp_ops[name] = _gen_bfp_op(op, name, bfp_args)
+        _bfp_ops[name] = _gen_bfp_op(op, name, bfp_args, transpose)
 
     return _bfp_ops[name]
 
@@ -418,7 +467,7 @@ def F_matmul_bfp(**kwargs):
     bfp_args = unpack_bfp_args(kwargs)
     if bfp_args['num_format'] == 'bfp':
         # print("************************************* BFP MATMUL *****************************************")
-        return _get_bfp_op(torch.matmul, 'matmul', bfp_args)
+        return _get_bfp_op(torch.matmul, 'matmul', bfp_args, True)
     else:
         return torch.matmul
 
