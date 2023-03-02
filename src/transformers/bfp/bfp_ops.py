@@ -178,10 +178,20 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             padded_shape[-1] = orig_shape[-1]+pad_size
 
         t = t.contiguous().view(-1,block_size)
-        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
-        t = t.contiguous().view(padded_shape)
+        # t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
+        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, False, sparsity_frac, padded_shape[-1])
+        # t = t.contiguous().view(padded_shape)
+        temp = t.contiguous().view(1, -1).float()
+        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
+        zero_mask = torch.full(temp.shape, 1).to(device=device)
 
-        return t.narrow(-1,0,orig_shape[-1])
+        if sparsity == True:
+            zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+
+        temp = torch.where(zero_mask==0, 0, temp)
+
+        # return t.narrow(-1,0,orig_shape[-1])
+        return temp.contiguous().view(padded_shape).narrow(-1, 0, orig_shape[-1])
     else:
         raise NotImplementedError('NumFormat not implemented')
 
