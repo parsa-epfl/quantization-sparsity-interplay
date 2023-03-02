@@ -80,13 +80,8 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
     #print(t.shape)
     #print(t)
 
-    # Sparsity scheme 1: Zero out the k% of the blocks with minimal exponents
+    # No sparsity at all
     exp = get_exponent(t, epsilon)
-    _, sparse_idx = torch.topk(exp, k=int(exp.shape[0]*sparsity_frac), largest=False, dim=0)
-    zero_mask = torch.full(exp.shape, 1).to(device=device)
-    if sparsity == True:
-        zero_mask.scatter_(index=sparse_idx, dim=0, value=0)
-
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)
     #The maximum representable value with exp
@@ -99,7 +94,28 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
 
     #To ensure that there is no underflow or overflow
     new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
-    return torch.where(zero_mask==0, 0, new_t)
+    return new_t
+
+    # # Sparsity scheme 1: Zero out the k% of the blocks with minimal exponents
+    # exp = get_exponent(t, epsilon)
+    # _, sparse_idx = torch.topk(exp, k=int(exp.shape[0]*sparsity_frac), largest=False, dim=0)
+    # zero_mask = torch.full(exp.shape, 1).to(device=device)
+    # if sparsity == True:
+    #     zero_mask.scatter_(index=sparse_idx, dim=0, value=0)
+
+    # #The interval between two consecutive numbers with that exponent value
+    # interval = torch.pow(2.0, exp-mant_bits)
+    # #The maximum representable value with exp
+    # max_v = torch.pow(2.0, exp) - interval
+
+    # # To ensure that we preserve the interval
+    # t = t/interval
+    # rounded = round_tensor(t, rounding_mode, device)
+    # rounded *=  interval
+
+    # #To ensure that there is no underflow or overflow
+    # new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
+    # return torch.where(zero_mask==0, 0, new_t)
 
     # # Sparsity scheme 2: In each row, zero out the block with lowest exponent
     # exp = get_exponent(t, epsilon)
@@ -181,12 +197,12 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         # t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, padded_shape[-1])
         t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, False, sparsity_frac, padded_shape[-1])
         # t = t.contiguous().view(padded_shape)
-        temp = t.contiguous().view(1, -1).float()
-        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
+        temp = t.contiguous().view(-1, 1)
+        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=0, largest=False)
         zero_mask = torch.full(temp.shape, 1).to(device=device)
 
         if sparsity == True:
-            zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+            zero_mask.scatter_(index=sparse_idx, dim=0, value=0)
 
         temp = torch.where(zero_mask==0, 0, temp)
 
