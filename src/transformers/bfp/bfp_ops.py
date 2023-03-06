@@ -198,7 +198,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, False, sparsity_frac, padded_shape[-1])
         # t = t.contiguous().view(padded_shape)
         temp = t.contiguous().view(-1, 1)
-        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=0, largest=False)
+        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[0]*sparsity_frac), dim=0, largest=False)
         zero_mask = torch.full(temp.shape, 1).to(device=device)
 
         if sparsity == True:
