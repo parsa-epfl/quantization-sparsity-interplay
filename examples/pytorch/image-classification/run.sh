@@ -3,28 +3,30 @@ if [ $# -lt 1 ]; then
   exit 2
 fi
 compute_node=$1
-blocksize=2
+blocksize=64
 mantbits=7
-# sparsity_frac=0.65
+sparsity_frac=0
 sparsity_num_format=bfp
 benchmark=cifar10
 rearrange=False
-for sparsity_frac in 0.4 0.5 0.6 0.3 0.7
-do
+N=2
+M=4
+# for sparsity_frac in 0.4 0.5 0.6 0.3 0.7
+# do
 # for blocksize in 2 4 8 16 32
 # do
-# for mantbits in 6 4
-# do
+for mantbits in 7 5 3
+do
    if [ $sparsity_num_format == "fp32" ]
    then
       filename=$sparsity_num_format/$sparsity_frac\_percent
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir ./sparse_results/$benchmark/sparsity_scheme3/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir ./sparse_results/$benchmark/sparsity_scheme3/$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme4/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme4/$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/
    fi
 
-   if [ $compute_node == "runai"]
+   if [ $compute_node == "runai" ]
    then
       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
@@ -42,7 +44,9 @@ do
    w_sparsity: True 
    grad_sparsity: False
    rearrange: $rearrange
-   sparsity_frac: $sparsity_frac 
+   sparsity_frac: $sparsity_frac
+   N: $N
+   M: $M 
    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       cd ../../../
    else
@@ -60,7 +64,9 @@ do
    w_sparsity: True 
    grad_sparsity: False
    rearrange: $rearrange
-   sparsity_frac: $sparsity_frac 
+   sparsity_frac: $sparsity_frac
+   N: $N
+   M: $M 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
@@ -68,7 +74,7 @@ do
    cd examples/pytorch/image-classification/
    python3 run_image_classification.py  \
       --dataset_name $benchmark  \
-      --output_dir ./sparse_results/$benchmark/sparsity_scheme3/$filename  \
+      --output_dir ./sparse_results/$benchmark/sparsity_scheme4/$filename  \
       --overwrite_output_dir \
       --remove_unused_columns False  \
       --do_train  \
@@ -89,7 +95,7 @@ do
       --adam_beta2 0.999  \
       --adam_epsilon 1e-08  \
       --lr_scheduler_type linear \
-      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme3/$filename.txt
+      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme4/$filename.txt
 done
 # done
 # done
