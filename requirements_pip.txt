@@ -56,7 +56,6 @@ tokenizers==0.13.2
 torch==1.13.1
 torchvision==0.14.1
 tqdm==4.64.1
--e git+https://github.com/ayanchak1508/transformers_hbfp_sparsity.git@d3b5c3d433f08d4689446b7210a59a0def8ea57f#egg=transformers
 typing_extensions==4.4.0
 urllib3==1.26.13
 xxhash==3.2.0

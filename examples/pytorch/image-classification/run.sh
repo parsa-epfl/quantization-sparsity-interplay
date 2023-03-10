@@ -1,3 +1,8 @@
+if [ $# -lt 1 ]; then
+  echo 1>&2 "$0: not enough arguments"
+  exit 2
+fi
+compute_node=$1
 blocksize=2
 mantbits=7
 # sparsity_frac=0.65
@@ -19,8 +24,30 @@ do
       mkdir ./sparse_results/$benchmark/sparsity_scheme3/$sparsity_num_format\_block\_size\_$blocksize/$sparsity_frac\_percent/
    fi
 
-   rm ../../../src/transformers/bfp/bfp_config.yaml
-   echo -e "hbfp:
+   if [ $compute_node == "runai"]
+   then
+      rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+      rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+      cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+      echo -e "hbfp:
+   num_format: 'bfp'
+   sparsity_num_format: '$sparsity_num_format' 
+   rounding_mode: 'stoc' 
+   epsilon: 0.00000001 
+   mant_bits: $mantbits 
+   weight_mant_bits: 15 
+   bfp_tile_size: 8 
+   bfp_block_size: $blocksize 
+   in_sparsity: False
+   w_sparsity: True 
+   grad_sparsity: False
+   rearrange: $rearrange
+   sparsity_frac: $sparsity_frac 
+   device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+      cd ../../../
+   else
+      rm ../../../src/transformers/bfp/bfp_config.yaml
+         echo -e "hbfp:
    num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
    rounding_mode: 'stoc' 
@@ -35,8 +62,9 @@ do
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
-   cd ../../../
-   pip install -e .
+      cd ../../../
+      pip install -e .
+   fi
    cd examples/pytorch/image-classification/
    python3 run_image_classification.py  \
       --dataset_name $benchmark  \
