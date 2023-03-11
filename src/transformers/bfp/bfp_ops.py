@@ -229,15 +229,36 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
     assert ((sparsity==False) or ((sparsity==True)and(sparsity_frac!=0)))
 
     if sparsity_num_format == 'fp32':
-        temp = t.contiguous().view(1, -1).float()
-        _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
-        zero_mask = torch.full(temp.shape, 1).to(device=device)
+        # # Scheme 1: Remove F% of all elements
+        # temp = t.contiguous().view(1, -1).float()
+        # _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
+        # zero_mask = torch.full(temp.shape, 1).to(device=device)
+
+        # if sparsity == True:
+        #     zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+
+        # temp = torch.where(zero_mask==0, 0, temp)
+        # return temp.contiguous().view(t.shape)
+
+        # Scheme 2: N:M sparsity
+        orig_shape = t.shape
+        t = torch.reshape(t, (1, -1))
+        pad_size = M - (t.shape[1] % M)
+        t = F.pad(t, (0, pad_size), 'constant')
+        t = torch.reshape(t, (-1, M))
+
+        temp_t = torch.abs(t)
+        _, sparse_idx = torch.topk(temp_t, k=N, dim=1, largest=False)
+        zero_mask = torch.full(temp_t.shape, 1).to(device=device)
 
         if sparsity == True:
             zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
 
-        temp = torch.where(zero_mask==0, 0, temp)
-        return temp.contiguous().view(t.shape)
+        t = torch.where(zero_mask==0, 0, t)
+        
+        t = torch.reshape(t, (1, -1))
+        t = t.narrow(-1, 0, (t.shape[1]-pad_size))
+        return torch.reshape(t, orig_shape)
 
     elif sparsity_num_format == 'bfp':
         if sgd_update:
