@@ -9,24 +9,20 @@ sparsity_frac=0.1
 sparsity_num_format=bfp
 benchmark=cifar10
 rearrange=False
-N=1
+N_top=14
+M_top=16
+N=2
 M=4
 
-# for sparsity_frac in 0.4 0.5 0.6 0.3 0.7
-# do
-# for blocksize in 32 16 8 4 2
-# do
-# for mantbits in 7 5 3
-# do
-for sparsity_num_format in fp32 bfp
+for mantbits in 7 5 3
 do
    if [ $sparsity_num_format == "fp32" ]
    then
-      filename=$sparsity_num_format/fp32\_$N:$M
+      filename=$sparsity_num_format/fp32\_$N_top:$M_top:$N:$M
    else
-      filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M\_intra/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir ./sparse_results/$benchmark/sparsity_scheme4/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir ./sparse_results/$benchmark/sparsity_scheme4/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M\_intra/
+      filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N_top:$M_top:$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N_top:$M_top:$N:$M/
    fi
 
    if [ $compute_node == "runai" ]
@@ -49,7 +45,9 @@ do
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
-   M: $M 
+   M: $M
+   N_top: $N_top
+   M_top: $M_top 
    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       cd ../../../
    else
@@ -69,7 +67,9 @@ do
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
-   M: $M 
+   M: $M
+   N_top: $N_top
+   M_top: $M_top 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
@@ -77,7 +77,7 @@ do
    cd examples/pytorch/image-classification/
    python3 run_image_classification.py  \
       --dataset_name $benchmark  \
-      --output_dir ./sparse_results/$benchmark/sparsity_scheme4/$filename  \
+      --output_dir ./sparse_results/$benchmark/sparsity_scheme5/$filename  \
       --overwrite_output_dir \
       --remove_unused_columns False  \
       --do_train  \
@@ -98,7 +98,5 @@ do
       --adam_beta2 0.999  \
       --adam_epsilon 1e-08  \
       --lr_scheduler_type linear \
-      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme4/$filename.txt
+      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme5/$filename.txt
 done
-# done
-# done

@@ -72,7 +72,7 @@ def get_exponent(t, epsilon):
     #Get the exponent of that element (We use ceil because in bfp format, we convert using 0.mantissa_bits instead of fp32's 1.mantissa_bits)
     return (max_v + epsilon).log2().ceil()
 
-def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, sparsity_frac=0, N=0, M=0, cols=0, exp_given=None):
+def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, sparsity_frac=0, N=0, M=0, N_top=0, M_top=0, cols=0, exp_given=None):
     """
     Convert float tensor t to bfp
     """
@@ -166,42 +166,42 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
 
         # return torch.where(zero_mask==0, 0, temp)
 
-        # Sparsity Scheme 4: N:M sparsity inside each block
-        block_size = t.shape[1]
-        assert (N < M) and (N!=0) and (M!=0) and (M<=block_size)
-        exp = get_exponent(t, epsilon)
-        #The interval between two consecutive numbers with that exponent value
-        interval = torch.pow(2.0, exp-mant_bits)
-        #The maximum representable value with exp
-        max_v = torch.pow(2.0, exp) - interval
+        # # Sparsity Scheme 4: N:M sparsity inside each block
+        # block_size = t.shape[1]
+        # assert (N < M) and (N!=0) and (M!=0) and (M<=block_size)
+        # exp = get_exponent(t, epsilon)
+        # #The interval between two consecutive numbers with that exponent value
+        # interval = torch.pow(2.0, exp-mant_bits)
+        # #The maximum representable value with exp
+        # max_v = torch.pow(2.0, exp) - interval
 
-        # To ensure that we preserve the interval
-        t = t/interval
-        rounded = round_tensor(t, rounding_mode, device)
-        rounded *=  interval
+        # # To ensure that we preserve the interval
+        # t = t/interval
+        # rounded = round_tensor(t, rounding_mode, device)
+        # rounded *=  interval
 
-        #To ensure that there is no underflow or overflow
-        t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
+        # #To ensure that there is no underflow or overflow
+        # t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
 
-        if M != block_size:
-            t = torch.reshape(t, (1, -1))
-            pad_size = M - (t.shape[1] % M)
-            t = F.pad(t, (0, pad_size), 'constant')
-            t = torch.reshape(t, (-1, M))
+        # if M != block_size:
+        #     t = torch.reshape(t, (1, -1))
+        #     pad_size = M - (t.shape[1] % M)
+        #     t = F.pad(t, (0, pad_size), 'constant')
+        #     t = torch.reshape(t, (-1, M))
 
-        temp_t = torch.abs(t)
-        _, sparse_idx = torch.topk(temp_t, k=(M-N), dim=1, largest=False)
-        zero_mask = torch.full(temp_t.shape, 1).to(device=device)
+        # temp_t = torch.abs(t)
+        # _, sparse_idx = torch.topk(temp_t, k=(M-N), dim=1, largest=False)
+        # zero_mask = torch.full(temp_t.shape, 1).to(device=device)
 
-        zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+        # zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
 
-        t = torch.where(zero_mask==0, 0, t)
+        # t = torch.where(zero_mask==0, 0, t)
 
-        if M != block_size:
-            t = torch.reshape(t, (1, -1))
-            t = t.narrow(-1, 0, (t.shape[1]-pad_size))
+        # if M != block_size:
+        #     t = torch.reshape(t, (1, -1))
+        #     t = t.narrow(-1, 0, (t.shape[1]-pad_size))
 
-        return t
+        # return t
 
         # # Sparsity scheme 5: N:M Inter block sparsity
         # num_blocks, block_size = t.shape[0], t.shape[1]
@@ -239,10 +239,65 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
         # 
         # return torch.where(zero_mask==0, 0, new_t)
 
+        # Sparsity scheme 6: Hierarchial N:M Sparsity 2 levels
+        num_blocks, block_size = t.shape[0], t.shape[1]
+        assert ((sparsity==False) or ((sparsity==True) and (N < M) and (N!=0) and (M!=0) and (N_top<M_top) and (N_top!=0) and (M_top!=0) and (M_top<=num_blocks) and (M<=block_size)))
+        exp = get_exponent(t, epsilon)
+        if num_blocks % M_top != 0:
+            pad_size = M_top - (num_blocks % M_top)
+            exp = F.pad(exp, (0, 0, 0, pad_size), 'constant')
+              
+        exp = torch.reshape(exp, (-1, M_top))
+        _, sparse_idx = torch.topk(exp, k=(M_top-N_top), dim=1, largest=False)
+        zero_mask = torch.full(exp.shape, 1).to(device=device)
+        
+        zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+            
+        zero_mask = torch.reshape(zero_mask, (-1, 1))
+        exp = torch.reshape(exp, (-1, 1))
+        
+        if num_blocks % M_top != 0:
+            zero_mask = zero_mask.narrow(0, 0, (zero_mask.shape[0]-pad_size))
+            exp = exp.narrow(0, 0, (exp.shape[0]-pad_size))
+        
+        #The interval between two consecutive numbers with that exponent value
+        interval = torch.pow(2.0, exp-mant_bits)
+        #The maximum representable value with exp
+        max_v = torch.pow(2.0, exp) - interval
+
+        # To ensure that we preserve the interval
+        t = t/interval
+        rounded = round_tensor(t, rounding_mode, device)
+        rounded *=  interval
+
+        #To ensure that there is no underflow or overflow
+        new_t = torch.min(torch.max(rounded, -max_v), max_v).to(device=device)
+        
+        t = torch.where(zero_mask==0, 0, new_t)
+
+        if M != block_size:
+            t = torch.reshape(t, (1, -1))
+            pad_size = M - (t.shape[1] % M)
+            t = F.pad(t, (0, pad_size), 'constant')
+            t = torch.reshape(t, (-1, M))
+
+        temp_t = torch.abs(t)
+        _, sparse_idx = torch.topk(temp_t, k=(M-N), dim=1, largest=False)
+        zero_mask = torch.full(temp_t.shape, 1).to(device=device)
+
+        zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+
+        t = torch.where(zero_mask==0, 0, t)
+
+        if M != block_size:
+            t = torch.reshape(t, (1, -1))
+            t = t.narrow(-1, 0, (t.shape[1]-pad_size))
+
+        return t
 
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
                        num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, rearrange=False, 
-                       sparsity_frac=0, N=0, M=0, sparsity_num_format='bfp', identifier='',
+                       sparsity_frac=0, N=0, M=0, N_top=0, M_top=0, sparsity_num_format='bfp', identifier='',
                        sgd_update=False, mant_bits_pow=None):
     """
     Convert fp32 tensor t to bfp with blocks.
@@ -261,6 +316,25 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         sparsity = False
 
     assert ((sparsity==False) or ((sparsity==True)and(sparsity_frac!=0)))
+
+    # if sparsity == True:
+    #     orig_shape = t.shape
+    #     t = torch.reshape(t, (1, -1))
+    #     pad_size = M - (t.shape[1] % M)
+    #     t = F.pad(t, (0, pad_size), 'constant')
+    #     t = torch.reshape(t, (-1, M))
+
+    #     temp_t = torch.abs(t)
+    #     _, sparse_idx = torch.topk(temp_t, k=(M-N), dim=1, largest=False)
+    #     zero_mask = torch.full(temp_t.shape, 1).to(device=device)
+
+    #     zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+
+    #     t = torch.where(zero_mask==0, 0, t)
+
+    #     t = torch.reshape(t, (1, -1))
+    #     t = t.narrow(-1, 0, (t.shape[1]-pad_size))
+    #     return torch.reshape(t, orig_shape)
 
     if sparsity_num_format == 'fp32':
         if sparsity == False:
@@ -302,7 +376,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         orig_shape = t.shape
         block_size = bfp_block_size
         if block_size == 0:
-            return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M).view(orig_shape)
+            return _float_to_bfp(t.view(1, -1), mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M, N_top=N_top, M_top=M_top).view(orig_shape)
 
         padded_shape = list(orig_shape)
 
@@ -312,7 +386,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             padded_shape[-1] = orig_shape[-1]+pad_size
 
         t = t.contiguous().view(-1,block_size)
-        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M)
+        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M, N_top=N_top, M_top=M_top)
         t = t.contiguous().view(padded_shape)
         
         return t.narrow(-1,0,orig_shape[-1])
@@ -566,6 +640,8 @@ def unpack_bfp_args(kwargs):
                 ('grad_sparsity', False),
                 ('N', 0),
                 ('M', 0),
+                ('N_top', 0),
+                ('M_top', 0),
                 ('rearrange', False),
                 ('sparsity_frac', 0),
                 ('device', 'cpu')]
@@ -774,6 +850,8 @@ def test_F_matmul_bfp():
         'rearrange': False,
         'N': 0,
         'M': 0,
+        'N_top': 0,
+        'M_top': 0,
         'sparsity_frac': 0.50,
         'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }
