@@ -9,20 +9,18 @@ sparsity_frac=0.1
 sparsity_num_format=bfp
 benchmark=cifar10
 rearrange=False
-N_top=14
-M_top=16
-N=2
-M=4
+N="[15, 32]"
+M="[16, 64]"
 
-for mantbits in 7 5 3
+for mantbits in 7
 do
    if [ $sparsity_num_format == "fp32" ]
    then
       filename=$sparsity_num_format/fp32\_$N_top:$M_top:$N:$M
    else
-      filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N_top:$M_top:$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+      filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
       mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N_top:$M_top:$N:$M/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
    fi
 
    if [ $compute_node == "runai" ]
@@ -45,9 +43,7 @@ do
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
-   M: $M
-   N_top: $N_top
-   M_top: $M_top 
+   M: $M 
    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       cd ../../../
    else
@@ -68,8 +64,6 @@ do
    sparsity_frac: $sparsity_frac
    N: $N
    M: $M
-   N_top: $N_top
-   M_top: $M_top 
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
