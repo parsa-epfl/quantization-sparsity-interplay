@@ -320,25 +320,6 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
 
     assert ((sparsity==False) or ((sparsity==True)and(sparsity_frac!=0)))
 
-    # if sparsity == True:
-    #     orig_shape = t.shape
-    #     t = torch.reshape(t, (1, -1))
-    #     pad_size = M - (t.shape[1] % M)
-    #     t = F.pad(t, (0, pad_size), 'constant')
-    #     t = torch.reshape(t, (-1, M))
-
-    #     temp_t = torch.abs(t)
-    #     _, sparse_idx = torch.topk(temp_t, k=(M-N), dim=1, largest=False)
-    #     zero_mask = torch.full(temp_t.shape, 1).to(device=device)
-
-    #     zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
-
-    #     t = torch.where(zero_mask==0, 0, t)
-
-    #     t = torch.reshape(t, (1, -1))
-    #     t = t.narrow(-1, 0, (t.shape[1]-pad_size))
-    #     return torch.reshape(t, orig_shape)
-
     if sparsity_num_format == 'fp32':
         if sparsity == False:
             return t
@@ -373,7 +354,6 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             # return torch.reshape(t, orig_shape)
 
             # Scheme 3: Generic hierarchial N:M sparsity
-            print("N = {}\nM = {}".format(N, M))
             orig_shape = t.shape
             t = torch.reshape(t, (1, -1))
             for idx in range(len(N)):
@@ -665,10 +645,8 @@ def unpack_bfp_args(kwargs):
                 ('in_sparsity', False),
                 ('w_sparsity', False),
                 ('grad_sparsity', False),
-                ('N', [0, 0, 0]),
-                ('M', [0, 0, 0]),
-                ('N_top', 0),
-                ('M_top', 0),
+                ('N', [0, 0]),
+                ('M', [0, 0]),
                 ('rearrange', False),
                 ('sparsity_frac', 0),
                 ('device', 'cpu')]
@@ -877,8 +855,6 @@ def test_F_matmul_bfp():
         'rearrange': False,
         'N': [0, 2, 4],
         'M': [0, 4, 8],
-        'N_top': 0,
-        'M_top': 0,
         'sparsity_frac': 0.50,
         'device': "cuda:0" if torch.cuda.is_available() else "cpu"
     }

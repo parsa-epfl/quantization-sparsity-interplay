@@ -6,17 +6,17 @@ compute_node=$1
 blocksize=64
 mantbits=7
 sparsity_frac=0.1
-sparsity_num_format=bfp
+sparsity_num_format=fp32
 benchmark=cifar10
 rearrange=False
-N="[15, 32]"
-M="[16, 64]"
+N="[15,32,2]"
+M="[16,64,4]"
 
 for mantbits in 7
 do
    if [ $sparsity_num_format == "fp32" ]
    then
-      filename=$sparsity_num_format/fp32\_$N_top:$M_top:$N:$M
+      filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
       mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/
