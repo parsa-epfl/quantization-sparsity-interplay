@@ -73,7 +73,7 @@ def get_exponent(t, epsilon):
     #Get the exponent of that element (We use ceil because in bfp format, we convert using 0.mantissa_bits instead of fp32's 1.mantissa_bits)
     return (max_v + epsilon).log2().ceil()
 
-def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, sparsity_frac=0, N=[0,0], M=[0,0], cols=0, exp_given=None):
+def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, sparsity_frac=0, N=[0,0], M=[0,0], cols=0, sgd_update=False, exp_given=None):
     """
     Convert float tensor t to bfp
     """
@@ -176,6 +176,14 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity=False, 
 
         temp = torch.where(zero_mask==0, 0, temp)
         t = torch.reshape(temp, t.shape)
+
+        std_devs = torch.std(t, dim=-1, keepdim=True)
+        max_std_dev = torch.max(std_devs)
+        min_bits, max_bits = 2, mant_bits
+        bits = torch.round((min_bits + (std_devs/max_std_dev)*(max_bits-min_bits))) # 1: Least quantization, 0: Maximum quantization
+        if sgd_update == False:
+            mant_bits = bits
+            print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
 
         exp = get_exponent(t, epsilon)
         #The interval between two consecutive numbers with that exponent value
@@ -444,14 +452,7 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
             padded_shape[-1] = orig_shape[-1]+pad_size
 
         t = t.contiguous().view(-1,block_size)
-        std_devs = torch.std(t, dim=-1, keepdim=True)
-        max_std_dev = torch.max(std_devs)
-        min_bits, max_bits = 2, mant_bits
-        bits = torch.round((min_bits + (std_devs/max_std_dev)*(max_bits-min_bits))) # 1: Least quantization, 0: Maximum quantization
-        if sgd_update == False:
-            mant_bits = bits
-            print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
-        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M)
+        t = _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sparsity, sparsity_frac, N=N, M=M, sgd_update=sgd_update)
         t = t.contiguous().view(padded_shape)
         
         return t.narrow(-1,0,orig_shape[-1])
