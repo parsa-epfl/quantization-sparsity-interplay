@@ -4,23 +4,24 @@ if [ $# -lt 1 ]; then
 fi
 compute_node=$1
 blocksize=64
-mantbits=7
-sparsity_frac=0.1
-sparsity_num_format=fp32
+# mantbits=7
+sparsity_frac=0.6
+sparsity_num_format=bfp
 benchmark=cifar10
 rearrange=False
-N="[15,32,2]"
-M="[16,64,4]"
 
-for mantbits in 7
+N="[-2,-2]"
+M="[-2,-2]"
+
+for mantbits in 5 3
 do
    if [ $sparsity_num_format == "fp32" ]
    then
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir ./sparse_results/$benchmark/sparsity_scheme5/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme8/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir ./sparse_results/$benchmark/sparsity_scheme8/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
    fi
 
    if [ $compute_node == "runai" ]
@@ -71,7 +72,7 @@ do
    cd examples/pytorch/image-classification/
    python3 run_image_classification.py  \
       --dataset_name $benchmark  \
-      --output_dir ./sparse_results/$benchmark/sparsity_scheme5/$filename  \
+      --output_dir ./sparse_results/$benchmark/sparsity_scheme8/$filename  \
       --overwrite_output_dir \
       --remove_unused_columns False  \
       --do_train  \
@@ -92,5 +93,505 @@ do
       --adam_beta2 0.999  \
       --adam_epsilon 1e-08  \
       --lr_scheduler_type linear \
-      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme5/$filename.txt
-done
+      --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme8/$filename.txt
+ done
+
+# N="[2,4]"
+# M="[4,4]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
+
+# done
+
+# N="[7,2]"
+# M="[8,4]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
+
+# N="[15,4]"
+# M="[16,8]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
+
+# N="[15,2]"
+# M="[16,4]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
+
+# N="[15,32]"
+# M="[16,64]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
+
+# N="[14,4]"
+# M="[16,8]"
+
+#    if [ $sparsity_num_format == "fp32" ]
+#    then
+#       filename=$sparsity_num_format/fp32\_$N:$M
+#    else
+#       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/$benchmark\_bfp$mantbits\_sparse\_$blocksize
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/
+#       mkdir ./sparse_results/$benchmark/sparsity_scheme6/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$N:$M/
+#    fi
+
+#    if [ $compute_node == "runai" ]
+#    then
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
+#       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
+#       echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M 
+#    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#    else
+#       rm ../../../src/transformers/bfp/bfp_config.yaml
+#          echo -e "hbfp:
+#    num_format: 'bfp'
+#    sparsity_num_format: '$sparsity_num_format' 
+#    rounding_mode: 'stoc' 
+#    epsilon: 0.00000001 
+#    mant_bits: $mantbits 
+#    weight_mant_bits: 15 
+#    bfp_tile_size: 8 
+#    bfp_block_size: $blocksize 
+#    in_sparsity: False
+#    w_sparsity: True 
+#    grad_sparsity: False
+#    rearrange: $rearrange
+#    sparsity_frac: $sparsity_frac
+#    N: $N
+#    M: $M
+#    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+#       cd ../../../
+#       pip install -e .
+#    fi
+#    cd examples/pytorch/image-classification/
+#    python3 run_image_classification.py  \
+#       --dataset_name $benchmark  \
+#       --output_dir ./sparse_results/$benchmark/sparsity_scheme6/$filename  \
+#       --overwrite_output_dir \
+#       --remove_unused_columns False  \
+#       --do_train  \
+#       --do_eval  \
+#       --learning_rate 5e-5  \
+#       --num_train_epochs 3  \
+#       --per_device_train_batch_size 8  \
+#       --per_device_eval_batch_size 8  \
+#       --logging_strategy steps  \
+#       --logging_steps 10  \
+#       --evaluation_strategy epoch  \
+#       --save_strategy epoch  \
+#       --load_best_model_at_end True  \
+#       --save_total_limit 5  \
+#       --seed 42  \
+#       --gradient_accumulation_steps 4  \
+#       --adam_beta1 0.9  \
+#       --adam_beta2 0.999  \
+#       --adam_epsilon 1e-08  \
+#       --lr_scheduler_type linear \
+#       --optim BFPAdam | tee ./sparse_results/$benchmark/sparsity_scheme6/$filename.txt
