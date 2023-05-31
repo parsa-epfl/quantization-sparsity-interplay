@@ -82,16 +82,44 @@ def std_dev_find_mant_bitsize(t, min_bits, max_bits):
     bits = torch.round((min_bits + (std_devs/max_std_dev)*(max_bits-min_bits))) # 1: Least quantization, 0: Maximum quantization
     return bits
 
+def qsnr_find_mant_bitsize(t, min_bits, max_bits, epsilon, rounding_mode, device):
+    assert (len(list(t.size())) == 2)
+    min_bits_vec, _ = _no_sparsity_float_to_bfp(t, min_bits, epsilon, rounding_mode, device)
+    vec_norm = torch.linalg.vector_norm(t, dim=-1)
+    diff_norm = torch.linalg.vector_norm((t - min_bits_vec), dim=-1)
+    min_bits_qsnr = torch.unsqueeze(torch.divide(diff_norm + epsilon, vec_norm + epsilon), -1)
+    max_qsnr = torch.max(min_bits_qsnr)
+    min_qsnr = torch.min(min_bits_qsnr)
+    # bits = torch.full((min_bits_qsnr.shape), min_bits).to(device=device)
+    # bits = torch.where(min_bits_qsnr < 1e-1, bits, min_bits+1)
+    # bits = torch.where((1e-1 <= min_bits_qsnr) & (min_bits_qsnr < 5e-1), bits, min_bits+2)
+    # bits = torch.where(5e-1 <= min_bits_qsnr, bits, min_bits+3)
+    qsnr = (min_bits_qsnr - min_qsnr)/(max_qsnr - min_qsnr)
+    bits = torch.round((min_bits + qsnr*(max_bits - min_bits)))
+    # bits = torch.round((min_bits + (min_bits_qsnr/max_qsnr)*(max_bits-min_bits)))
+    # print(f"({torch.min(t)}, {torch.max(t)}, {torch.min(vec_norm)}, {torch.max(vec_norm)}, {torch.max(diff_norm)}, {torch.max(diff_norm)}, {torch.max(bits)}, {torch.min(bits)})")
+    return bits
+    # max_bits_vec, _ = _no_sparsity_float_to_bfp(t, max_bits, epsilon, rounding_mode, device)
+    # max_bits_qsnr = torch.linalg.vector_norm(torch.subtract(t, max_bits_vec), dim=-1)
+
+    # print(f"{t.shape} {min_bits_vec.shape} {min_bits_qsnr.shape} {bits.shape}")
+    # raise NotImplementedError("Wait")
+
+
 # Normal FP32 -> BFP conversion of a tensor
 def _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     exp = get_exponent(t, epsilon)
-    
     if unconstrained == True and sgd_update == False:
         assert (len(bit_range) == 2)
         min_bits, max_bits = bit_range[0], bit_range[1]
-        bits = std_dev_find_mant_bitsize(t, min_bits, max_bits)
+        # print(f"[{min_bits}, {max_bits}]")
+        # bits = std_dev_find_mant_bitsize(t, min_bits, max_bits)
+        bits = qsnr_find_mant_bitsize(t, min_bits, max_bits, epsilon, rounding_mode, device)
         mant_bits = bits
-        # print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
+        # assert (len(list(mant_bits.size())) == 2)
+        # print(f"({torch.min(mant_bits)}, {torch.max(mant_bits)})")
+        if torch.cuda.current_device() == 0:
+            print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
 
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)
