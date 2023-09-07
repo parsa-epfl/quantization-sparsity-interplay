@@ -193,8 +193,10 @@ def sparsity_hierarchial_n_m(t, device, N=[], M=[]):
         _, sparse_idx = torch.topk(temp_t, k=(M[idx]-N[idx]), dim=1, largest=False)
         zero_mask = torch.full(temp_t.shape, 1).to(device=device)
         zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+        zero_elements = torch.zeros_like(non_zero_elements, dtype=torch.float32)
         
-        non_zero_elements = torch.where(zero_mask==0, 0, non_zero_elements)
+        # Liza: changed 0 -> zero_elements
+        non_zero_elements = torch.where(zero_mask==0, zero_elements, non_zero_elements)
         non_zero_elements = non_zero_elements.contiguous().view(1, -1)
         non_zero_elements = non_zero_elements.narrow(-1, 0, (non_zero_elements.shape[1]-pad_size))
         t = torch.scatter(t, 1, non_zero_idx[1].unsqueeze(0), non_zero_elements)
@@ -491,8 +493,8 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     class NewOpIn(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x, w):
-            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
-            return MxM_pre_processing(x, w, transpose, **bfp_args)
+            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            # return MxM_pre_processing(x, w, transpose, **bfp_args)
 
         @staticmethod
         def backward(ctx, grad_x, grad_w):
@@ -541,24 +543,24 @@ def unpack_bfp_args(kwargs):
     Set up the bfp arguments
     """
     bfp_args = {}
-    bfp_argn = [('num_format', 'fp32'),
+    bfp_argn = [('num_format', 'bfp'),
                 ('sparsity_num_format', 'fp32'),
                 ('rounding_mode', 'stoc'),
                 ('epsilon', 1e-8),
-                ('mant_bits', 0),
-                ('bfp_tile_size', 0),
-                ('bfp_block_size', 0),
-                ('weight_mant_bits', 0),
+                ('mant_bits', 7), # HBFP8
+                ('bfp_tile_size', 8),
+                ('bfp_block_size', 64),
+                ('weight_mant_bits', 15),
                 ('in_sparsity', False),
-                ('w_sparsity', False),
+                ('w_sparsity', True),
                 ('grad_sparsity', False),
-                ('N', [0, 0]),
-                ('M', [0, 0]),
+                ('N', [2]),
+                ('M', [4]),
                 ('rearrange', False),
-                ('sparsity_frac', 0),
+                ('sparsity_frac', 60),
                 ('unconstrained', False),
                 ('bit_range', []),
-                ('device', 'cpu')]
+                ('device', 'cuda')]
 
     for arg, default in bfp_argn:
         if arg in kwargs:
@@ -792,7 +794,7 @@ def test_sparse():
     print(t)
     b = float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=64,
                        num_format='bfp', weight_mant_bits=15, in_sparsity=False, w_sparsity=True, grad_sparsity=False, rearrange=False, 
-                       sparsity_frac=0.1, N=[2], M=[4], sparsity_num_format='fp32', identifier='w',
+                       sparsity_frac=0.1, N=[2], M=[4], sparsity_num_format='float32', identifier='w',
                        sgd_update=False, mant_bits_pow=None)
     
     print(t)
