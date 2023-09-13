@@ -596,6 +596,15 @@ def F_matmul_bfp(**kwargs):
         return torch.matmul
 
 
+def BFPbmm(mat1, mat2, **kwargs):
+    bfp_args = unpack_bfp_args(kwargs)
+    if bfp_args["num_format"] == "bfp":
+        op = _get_bfp_op(torch.bmm, "bmm", bfp_args)
+    else:
+        op = torch.bmm
+    return op(mat1, mat2)
+
+
 
 class BFPConv2d(torch.nn.Conv2d):
     """
