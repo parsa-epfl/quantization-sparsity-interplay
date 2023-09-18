@@ -263,6 +263,9 @@ class BertSelfAttention(nn.Module):
         self.query = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
         self.key = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
         self.value = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
+        # self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        # self.key = nn.Linear(config.hidden_size, self.all_head_size)
+        # self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
@@ -692,6 +695,7 @@ class BertPredictionHeadTransform(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
         
         self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        # self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -716,6 +720,7 @@ class BertLMPredictionHead(nn.Module):
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
         self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
+        # self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
 

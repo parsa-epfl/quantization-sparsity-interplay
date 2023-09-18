@@ -6,12 +6,12 @@ compute_node=$1
 blocksize=64
 mantbits=7
 sparsity_frac=0.6
-sparsity_num_format=bfp
+sparsity_num_format=fp32
 benchmark=ted_iwlst2013
 rearrange=False
 
-N="[-2,-2]"
-M="[-2,-2]"
+N="2"
+M="4"
 
 unconstrained=True
 bit_range="[2,3]"
@@ -21,8 +21,8 @@ bit_range="[2,3]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/marian_12.09/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/marian_12.09/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/marian_13.09/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/marian_13.09/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -48,7 +48,7 @@ bit_range="[2,3]"
    M: $M 
    unconstrained: $unconstrained
    bit_range: $bit_range
-   device: 'cuda:1'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
+   device: 'cuda:0'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       cd ../../../
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
@@ -70,21 +70,21 @@ bit_range="[2,3]"
    M: $M
    unconstrained: $unconstrained
    bit_range: $bit_range
-   device: 'cuda:1'" >> ../../../src/transformers/bfp/bfp_config.yaml
+   device: 'cuda:0'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
    fi
    cd examples/pytorch/translation/
-   python3 run_translation_marian.py  \
+   CUDA_VISIBLE_DEVICES=0 python3 run_translation_marian.py  \
       --model_name_or_path Helsinki-NLP/opus-mt-de-en \
       --source_lang de \
       --target_lang en \
       --dataset_name $benchmark  \
       --dataset_config_name de-en \
-      --output_dir /home/parsa_liza/experiments/marian_12.09/$benchmark/quant_scheme2/$filename  \
+      --output_dir /home/parsa_liza/experiments/marian_13.09/$benchmark/quant_scheme2/$filename  \
       --overwrite_output_dir \
       --remove_unused_columns False  \
-      --do_train  \
+      --do_train \
       --do_eval  \
       --learning_rate 5e-5  \
       --num_train_epochs 1 \
@@ -102,4 +102,4 @@ bit_range="[2,3]"
       --adam_beta2 0.999  \
       --adam_epsilon 1e-08  \
       --lr_scheduler_type linear \
-      --optim BFPAdam | tee /home/parsa_liza/experiments/marian_12.09/$benchmark/quant_scheme2/$filename.txt
+      --optim BFPAdam | tee /home/parsa_liza/experiments/marian_13.09/$benchmark/quant_scheme2/$filename.txt

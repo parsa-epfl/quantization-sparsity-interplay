@@ -1,0 +1,88 @@
+-------------------------------------------------------------------------------------
+fp32
+-------------------------------------------------------------------------------------
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.2907
+  train_runtime            = 0:07:15.61
+  train_samples            =       4771
+  train_samples_per_second =     32.857
+  train_steps_per_second   =      4.111
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6818
+  eval_loss               =     1.5546
+  eval_runtime            = 0:00:05.08
+  eval_samples            =        493
+  eval_samples_per_second =     96.944
+  eval_steps_per_second   =     12.192
+  perplexity              =      4.733
+  ----------------------------------------------------------------------------------
+  sparse8:16 fp32 7 epochs
+  ----------------------------------------------------------------------------------
+  eval_accuracy           =     0.6066
+  eval_loss               =     2.0324
+  eval_runtime            = 0:00:32.56
+  eval_samples            =        493
+  eval_samples_per_second =     15.139
+  eval_steps_per_second   =      1.904
+  perplexity              =      7.632
+  -----------------------------------------------------------------------------------
+  sparse8:16 fp32 10 epochs
+  -----------------------------------------------------------------------------------
+  ***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =     2.6739
+  train_runtime            = 1:12:20.45
+  train_samples            =       4771
+  train_samples_per_second =     10.992
+  train_steps_per_second   =      1.375
+  ***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6112
+  eval_loss               =     2.0177
+  eval_runtime            = 0:00:33.74
+  eval_samples            =        493
+  eval_samples_per_second =     14.609
+  eval_steps_per_second   =      1.837
+  perplexity              =     7.5207
+-------------------------------------------------------------------------------------
+sparse8:16 fp32 3 epochs no sparse attention (requires-double-check)
+-------------------------------------------------------------------------------------
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     3.2391
+  train_runtime            = 0:17:49.57
+  train_samples            =       4771
+  train_samples_per_second =     13.382
+  train_steps_per_second   =      1.675
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =      0.513
+  eval_loss               =     2.9066
+  eval_runtime            = 0:00:24.32
+  eval_samples            =        493
+  eval_samples_per_second =     20.264
+  eval_steps_per_second   =      2.548
+  perplexity              =    18.2951
+----------------------------------------------------------------------------------
+sparse8:16 fp32 3 epochs no sparse LM head (requires-double-check)
+-----------------------------------------------------------------------------------
+
+  ***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     3.2241
+  train_runtime            = 0:20:01.69
+  train_samples            =       4771
+  train_samples_per_second =     11.911
+  train_steps_per_second   =       1.49
+  ***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.5147
+  eval_loss               =     2.8657
+  eval_runtime            = 0:00:29.11
+  eval_samples            =        493
+  eval_samples_per_second =      16.93
+  eval_steps_per_second   =      2.129
+  perplexity              =     17.562
+  

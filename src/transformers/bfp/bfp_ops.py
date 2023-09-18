@@ -118,8 +118,8 @@ def _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_
         mant_bits = bits
         # assert (len(list(mant_bits.size())) == 2)
         # print(f"({torch.min(mant_bits)}, {torch.max(mant_bits)})")
-        if torch.cuda.current_device() == 0:
-            print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
+        # if torch.cuda.current_device() == 0:
+            # print("Mantissa bits used: {}".format(torch.bincount(torch.squeeze(mant_bits).int())))
 
     #The interval between two consecutive numbers with that exponent value
     interval = torch.pow(2.0, exp-mant_bits)

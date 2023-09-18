@@ -5,15 +5,15 @@ hbfp:
    epsilon: 0.00000001 
    mant_bits: 7 
    weight_mant_bits: 15 
-   bfp_tile_size: 8 
+   bfp_tile_size: 64
    bfp_block_size: 64 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: False
    sparsity_frac: 0.6
-   N: [-2,-2]
-   M: [-2,-2]
+   N: [8]
+   M: [16]
    unconstrained: True
-   bit_range: [2,3]
-   device: 'cuda:1'
+   bit_range: [1,7]
+   device: 'cuda:0'
