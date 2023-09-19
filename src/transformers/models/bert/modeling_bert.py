@@ -263,9 +263,6 @@ class BertSelfAttention(nn.Module):
         self.query = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
         self.key = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
         self.value = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
-        # self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        # self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        # self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
@@ -332,7 +329,8 @@ class BertSelfAttention(nn.Module):
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        # attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
 
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             query_length, key_length = query_layer.shape[2], key_layer.shape[2]
@@ -373,7 +371,8 @@ class BertSelfAttention(nn.Module):
             attention_probs = attention_probs * head_mask
 
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        context_layer = bfp_matmul(attention_probs, value_layer)
+        # context_layer = bfp_matmul(attention_probs, value_layer)
+        context_layer = torch.matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
@@ -695,7 +694,6 @@ class BertPredictionHeadTransform(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
         
         self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
-        # self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -720,7 +718,6 @@ class BertLMPredictionHead(nn.Module):
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
         self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
-        # self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
 

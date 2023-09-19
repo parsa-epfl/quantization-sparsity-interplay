@@ -3,22 +3,22 @@ blocksize=64
 mantbits=7
 sparsity_frac=0.6
 num_format=bfp
-sparsity_num_format=bfp
+sparsity_num_format=fp32
 rearrange=False
 
-N="[8]"
-M="[16]"
+N="[2]"
+M="[4]"
 
-unconstrained=True
-bit_range="[1,7]"
+unconstrained=False
+bit_range="[]"
 
    if [ $sparsity_num_format == "fp32" ]
    then
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert_3ep_15.09_hbfp_64/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert_3ep_15.09_hbfp_64/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert_3ep_19.09_sparse_bigger_lr_debug/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert_3ep_19.09_sparse_bigger_lr_debug/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -36,7 +36,7 @@ bit_range="[1,7]"
    bfp_tile_size: 64
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -58,7 +58,7 @@ bit_range="[1,7]"
    bfp_tile_size: 64
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -80,7 +80,7 @@ CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
     --do_train \
     --do_eval \
     --output_dir /tmp/test-mlm \
-    --output_dir /home/parsa_liza/experiments/bert_3ep_15.09_hbfp_64/$benchmark/quant_scheme2/$filename  \
+    --output_dir /home/parsa_liza/experiments/bert_3ep_19.09_sparse_bigger_lr_debug/$benchmark/quant_scheme2/$filename  \
     --overwrite_output_dir \
     --learning_rate 5e-05 \
     --adam_beta1 0.9  \
@@ -88,4 +88,4 @@ CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
     --adam_epsilon 1e-08  \
     --lr_scheduler_type linear \
     --optim BFPAdam \
-    --num_train_epochs 3
+    --num_train_epochs 10
