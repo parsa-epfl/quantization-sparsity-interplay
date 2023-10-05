@@ -217,3 +217,21 @@ sparse2:4 fp32 2x higher lr FP matmuls
   eval_samples_per_second =     18.843
   eval_steps_per_second   =       2.37
   perplexity              =     6.9971
+  --------------------------------------------------------------------------------
+  ***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =      2.187
+  train_runtime            = 0:57:24.17
+  train_samples            =       4771
+  train_samples_per_second =     13.852
+  train_steps_per_second   =      1.733
+09/19/2023 11:12:20 - INFO - __main__ - *** Evaluate ***
+***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6432
+  eval_loss               =     1.7969
+  eval_runtime            = 0:00:26.64
+  eval_samples            =        493
+  eval_samples_per_second =     18.505
+  eval_steps_per_second   =      2.327
+  perplexity              =     6.0309

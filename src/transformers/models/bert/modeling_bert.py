@@ -19,6 +19,7 @@
 import math
 import os
 import warnings
+import pickle
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
@@ -264,6 +265,10 @@ class BertSelfAttention(nn.Module):
         self.key = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
         self.value = BFPLinear(config.hidden_size, self.all_head_size, **self.bfp_args)
 
+        # self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        # self.key = nn.Linear(config.hidden_size, self.all_head_size)
+        # self.value = nn.Linear(config.hidden_size, self.all_head_size)
+
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.position_embedding_type = position_embedding_type or getattr(
             config, "position_embedding_type", "absolute"
@@ -315,7 +320,12 @@ class BertSelfAttention(nn.Module):
             value_layer = self.transpose_for_scores(self.value(hidden_states))
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
-
+        key_0 = key_layer[0].detach().cpu().numpy()
+        query_0 = query_layer[0].detach().cpu().numpy()
+        value_0 = value_layer[0].detach().cpu().numpy()
+        kqv_dict = {"key": key_0, "query": query_0, "value": value_0}
+        PATH_TO_DICT = "/home/parsa_liza/experiments/kqv_distributions/fp-last_layer.pkl"
+        pickle.dump(kqv_dict, open(PATH_TO_DICT, "wb"))
         use_cache = past_key_value is not None
         if self.is_decoder:
             # if cross_attention save Tuple(torch.Tensor, torch.Tensor) of all cross attention key/value_states.
@@ -326,11 +336,10 @@ class BertSelfAttention(nn.Module):
             # can concat previous decoder key/value_states to current projected key/value_states (third "elif" case)
             # if encoder bi-directional self-attention `past_key_value` is always `None`
             past_key_value = (key_layer, value_layer)
-
         # Take the dot product between "query" and "key" to get the raw attention scores.
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        # attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        # attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
 
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             query_length, key_length = query_layer.shape[2], key_layer.shape[2]
@@ -371,8 +380,8 @@ class BertSelfAttention(nn.Module):
             attention_probs = attention_probs * head_mask
 
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        # context_layer = bfp_matmul(attention_probs, value_layer)
-        context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = bfp_matmul(attention_probs, value_layer)
+        # context_layer = torch.matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
@@ -1065,6 +1074,7 @@ class BertModel(BertPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
+        print(pooled_output)
         sequence_output = encoder_outputs[0]
         pooled_output = self.pooler(sequence_output) if self.pooler is not None else None
 

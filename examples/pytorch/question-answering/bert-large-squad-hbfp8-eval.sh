@@ -2,8 +2,8 @@ compute_node=$1
 blocksize=64
 mantbits=7
 sparsity_frac=0.6
-num_format=fp32
-sparsity_num_format=fp32
+num_format=bfp
+sparsity_num_format=bfp
 rearrange=False
 
 N="[2]"
@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert_3ep_19.09_no_sparse_attentions/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert_3ep_19.09_no_sparse_attentions/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert_large_squad_hbfp8_sparse_eval/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert_large_squad_hbfp8_sparse_eval/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -27,7 +27,7 @@ bit_range="[]"
       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
       echo -e "hbfp:
-   num_format: 'fp32'
+   num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
@@ -49,7 +49,7 @@ bit_range="[]"
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
          echo -e "hbfp:
-   num_format: 'fp32'
+   num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
@@ -58,7 +58,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -70,22 +70,15 @@ bit_range="[]"
       cd ../../../
       pip install -e .
    fi
-cd examples/pytorch/language-modeling
-CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
-    --model_name_or_path bert-base-cased \
-    --dataset_name wikitext \
-    --dataset_config_name wikitext-2-raw-v1 \
+cd examples/pytorch/question-answering
+CUDA_VISIBLE_DEVICES=0 python run_qa.py \
+    --model_name_or_path /home/parsa_liza/experiments/bert_large_squad_hbfp8_sparse/quant_scheme2/checkpoint-17000 \
+    --dataset_name squad \
+    --do_eval \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 8 \
-    --do_train \
-    --do_eval \
-    --output_dir /tmp/test-mlm \
-    --output_dir /home/parsa_liza/experiments/bert_3ep_19.09_no_sparse_attentions/$benchmark/quant_scheme2/$filename  \
-    --overwrite_output_dir \
-    --learning_rate 1e-04 \
-    --adam_beta1 0.9  \
-    --adam_beta2 0.999  \
-    --adam_epsilon 1e-08  \
-    --lr_scheduler_type linear \
-    --optim BFPAdam \
-    --num_train_epochs 3
+    --learning_rate 3e-5 \
+    --num_train_epochs 1 \
+    --max_seq_length 384 \
+    --doc_stride 128 \
+    --output_dir /home/parsa_liza/experiments/bert_large_squad_hbfp8_sparse_eval/$benchmark/quant_scheme2/$filename  \

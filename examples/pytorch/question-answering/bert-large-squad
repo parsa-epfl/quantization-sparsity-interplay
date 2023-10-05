@@ -1,0 +1,67 @@
+-----------------------------------------------------------------------------------------------
+fp32
+-----------------------------------------------------------------------------------------------
+***** train metrics *****
+  epoch                    =        2.0
+  train_loss               =     0.8125
+  train_runtime            = 2:52:30.32
+  train_samples            =      88729
+  train_samples_per_second =     17.145
+  train_steps_per_second   =      2.143
+ ***** eval metrics *****
+  epoch                   =        2.0
+  eval_exact_match        =    84.7398
+  eval_f1                 =    91.2018
+  eval_runtime            = 0:03:18.02
+  eval_samples            =      10822
+  eval_samples_per_second =     54.651
+  eval_steps_per_second   =      6.833
+  ------------------------------------------------------------------------------------------------------------
+  fp32-sparse 2:4
+  ------------------------------------------------------------------------------------------------------------
+   ***** train metrics *****
+  epoch                    =        2.0
+  train_loss               =     0.9154
+  train_runtime            = 9:04:53.90
+  train_samples            =      88729
+  train_samples_per_second =      5.428
+  train_steps_per_second   =      0.679
+  ***** eval metrics *****
+  epoch                   =        2.0
+  eval_exact_match        =    84.2384
+  eval_f1                 =    90.6645
+  eval_runtime            = 0:20:40.19
+  eval_samples            =      10822
+  eval_samples_per_second =      8.726
+  eval_steps_per_second   =      1.091
+--------------------------------------------------------------------------------------------------------------
+hbfp8-sparse 2:4
+--------------------------------------------------------------------------------------------------------------
+***** eval metrics *****
+  eval_exact_match        =    84.1549
+  eval_f1                 =    90.5992
+  eval_runtime            = 0:18:45.01
+  eval_samples            =      10822
+  eval_samples_per_second =      9.598
+  eval_steps_per_second   =      1.188
+-------------------------------------------------------------------------------------------------------------
+hbfp8-sparse 2:4 with quantized key-query-values
+---------------------------------------------------------------------------------------------------------
+***** eval metrics *****
+  eval_exact_match        =    84.1549
+  eval_f1                 =    90.2851
+  eval_runtime            = 0:19:35.22
+  eval_samples            =      10822
+  eval_samples_per_second =      9.890
+  eval_steps_per_second   =      1.191
+-------------------------------------------------------------------------------------------------------------
+hbfp6-sparse 2:4
+-------------------------------------------------------------------------------------------------------------
+***** eval metrics *****
+  eval_exact_match        =    82.6963
+  eval_f1                 =    89.7255
+  eval_runtime            = 0:19:03.17
+  eval_samples            =      10822
+  eval_samples_per_second =      9.467
+  eval_steps_per_second   =      1.184
+  

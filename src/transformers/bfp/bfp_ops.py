@@ -516,7 +516,7 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     def new_op(x, w, *args, **kwargs):
         x, w = new_op_in(x, w)
         # w[0, 0:8]
-        # print("W:", w.shape)
+        # print("W:", w.shape) 
         out = op(x, w, *args, **kwargs)
         return new_op_out(out)
 

@@ -1,0 +1,552 @@
+Obtaining file:///home/parsa_liza/transformers_hbfp_sparsity
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: filelock in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (3.9.0)
+Requirement already satisfied: huggingface-hub<1.0,>=0.10.0 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (0.11.1)
+Requirement already satisfied: numpy>=1.17 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (1.23.5)
+Requirement already satisfied: packaging>=20.0 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (22.0)
+Requirement already satisfied: pyyaml>=5.1 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (6.0)
+Requirement already satisfied: regex!=2019.12.17 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (2022.10.31)
+Requirement already satisfied: requests in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (2.28.1)
+Requirement already satisfied: tokenizers!=0.11.3,<0.14,>=0.11.1 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (0.13.2)
+Requirement already satisfied: tqdm>=4.27 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from transformers==4.26.0.dev0) (4.64.1)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from huggingface-hub<1.0,>=0.10.0->transformers==4.26.0.dev0) (4.4.0)
+Requirement already satisfied: charset-normalizer<3,>=2 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from requests->transformers==4.26.0.dev0) (2.1.1)
+Requirement already satisfied: idna<4,>=2.5 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from requests->transformers==4.26.0.dev0) (3.4)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from requests->transformers==4.26.0.dev0) (1.26.13)
+Requirement already satisfied: certifi>=2017.4.17 in /home/parsa_liza/anaconda3/envs/hugging_face_env/lib/python3.9/site-packages (from requests->transformers==4.26.0.dev0) (2022.12.7)
+Building wheels for collected packages: transformers
+  Building editable for transformers (pyproject.toml): started
+  Building editable for transformers (pyproject.toml): finished with status 'done'
+  Created wheel for transformers: filename=transformers-4.26.0.dev0-0.editable-py3-none-any.whl size=32354 sha256=9fee2f79ab5a26f874f20c92c4c668622bafe0d06d07f49c7e1cf5a6ef0d918b
+  Stored in directory: /tmp/pip-ephem-wheel-cache-89m5xwyn/wheels/7b/3a/26/80f4671fd1fb01deae379542c951d3672a0e35072d7a346991
+Successfully built transformers
+Installing collected packages: transformers
+  Attempting uninstall: transformers
+    Found existing installation: transformers 4.26.0.dev0
+    Uninstalling transformers-4.26.0.dev0:
+      Successfully uninstalled transformers-4.26.0.dev0
+Successfully installed transformers-4.26.0.dev0
+09/19/2023 10:13:58 - WARNING - __main__ - Process rank: -1, device: cuda:0, n_gpu: 1distributed training: False, 16-bits training: False
+09/19/2023 10:13:58 - INFO - __main__ - Training/evaluation parameters TrainingArguments(
+_n_gpu=1,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+bf16=False,
+bf16_full_eval=False,
+bfp_tile_size=0,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=0,
+dataloader_pin_memory=True,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=None,
+disable_tqdm=False,
+do_eval=True,
+do_predict=False,
+do_train=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_steps=None,
+evaluation_strategy=no,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+fsdp=[],
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=False,
+greater_is_better=None,
+group_by_length=False,
+half_precision_backend=auto,
+hub_model_id=None,
+hub_private_repo=False,
+hub_strategy=every_save,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_inputs_for_metrics=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=5e-05,
+length_column_name=length,
+load_best_model_at_end=False,
+local_rank=-1,
+log_level=passive,
+log_level_replica=passive,
+log_on_each_node=True,
+logging_dir=/home/parsa_liza/experiments/bert_10ep_20.09_matmul//quant_scheme2/fp32/fp32_[2]:[4]/runs/Sep19_10-13-49_localhost.localdomain,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=500,
+logging_strategy=steps,
+lr_scheduler_type=linear,
+mant_bits=8,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mp_parameters=,
+no_cuda=False,
+num_format=fp32,
+num_train_epochs=10.0,
+optim=BFPAdam,
+optim_args=None,
+output_dir=/home/parsa_liza/experiments/bert_10ep_20.09_matmul//quant_scheme2/fp32/fp32_[2]:[4],
+overwrite_output_dir=True,
+past_index=-1,
+per_device_eval_batch_size=8,
+per_device_train_batch_size=8,
+prediction_loss_only=False,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+ray_scope=last,
+remove_unused_columns=True,
+report_to=['tensorboard'],
+resume_from_checkpoint=None,
+rounding_mode=stoc,
+run_name=/home/parsa_liza/experiments/bert_10ep_20.09_matmul//quant_scheme2/fp32/fp32_[2]:[4],
+save_on_each_node=False,
+save_steps=500,
+save_strategy=steps,
+save_total_limit=None,
+seed=42,
+sharded_ddp=[],
+skip_memory_metrics=True,
+tf32=None,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+use_ipex=False,
+use_legacy_prediction_loop=False,
+use_mps_device=False,
+warmup_ratio=0.0,
+warmup_steps=0,
+weight_decay=0.0,
+weight_mant_bits=15,
+xpu_backend=None,
+)
+09/19/2023 10:14:25 - INFO - datasets.info - Loading Dataset Infos from /home/parsa_liza/.cache/huggingface/modules/datasets_modules/datasets/wikitext/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+09/19/2023 10:14:25 - INFO - datasets.builder - Overwrite dataset info from restored data version.
+09/19/2023 10:14:25 - INFO - datasets.info - Loading Dataset info from /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+09/19/2023 10:14:25 - WARNING - datasets.builder - Found cached dataset wikitext (/home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126)
+09/19/2023 10:14:25 - INFO - datasets.info - Loading Dataset info from /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+.................... model .........................
+BertForMaskedLM(
+  (bert): BertModel(
+    (embeddings): BertEmbeddings(
+      (word_embeddings): Embedding(28996, 768, padding_idx=0)
+      (position_embeddings): Embedding(512, 768)
+      (token_type_embeddings): Embedding(2, 768)
+      (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      (dropout): Dropout(p=0.1, inplace=False)
+    )
+    (encoder): BertEncoder(
+      (layer): ModuleList(
+        (0): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (1): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (2): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (3): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (4): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (5): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (6): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (7): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (8): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (9): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (10): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (11): BertLayer(
+          (attention): BertAttention(
+            (self): BertSelfAttention(
+              (query): BFPLinear(in_features=768, out_features=768, bias=True)
+              (key): BFPLinear(in_features=768, out_features=768, bias=True)
+              (value): BFPLinear(in_features=768, out_features=768, bias=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+            (output): BertSelfOutput(
+              (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+              (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+              (dropout): Dropout(p=0.1, inplace=False)
+            )
+          )
+          (intermediate): BertIntermediate(
+            (dense): BFPLinear(in_features=768, out_features=3072, bias=True)
+            (intermediate_act_fn): GELUActivation()
+          )
+          (output): BertOutput(
+            (dense): BFPLinear(in_features=3072, out_features=768, bias=True)
+            (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (cls): BertOnlyMLMHead(
+    (predictions): BertLMPredictionHead(
+      (transform): BertPredictionHeadTransform(
+        (dense): BFPLinear(in_features=768, out_features=768, bias=True)
+        (transform_act_fn): GELUActivation()
+        (LayerNorm): LayerNorm((768,), eps=1e-12, elementwise_affine=True)
+      )
+      (decoder): BFPLinear(in_features=768, out_features=28996, bias=True)
+    )
+  )
+)
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-2f7034f57fdde13b.arrow
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-85b9857c3cdb2431.arrow
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-ba54a71be8e91d63.arrow
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-83ee166c52ddffd3.arrow
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-132ce86bd0407711.arrow
+09/19/2023 10:14:42 - WARNING - datasets.arrow_dataset - Loading cached processed dataset at /home/parsa_liza/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/1.0.0/a241db52902eaf2c6aa732210bead40c090019a499ceb13bcbfa3f8ab646a126/cache-b1b6682424706d0a.arrow
+{'num_format': 'bfp', 'sparsity_num_format': 'fp32', 'rounding_mode': 'stoc', 'epsilon': 1e-08, 'mant_bits': 7, 'weight_mant_bits': 15, 'bfp_tile_size': 64, 'bfp_block_size': 64, 'in_sparsity': False, 'w_sparsity': True, 'grad_sparsity': False, 'rearrange': False, 'sparsity_frac': 0.6, 'N': [2], 'M': [4], 'unconstrained': False, 'bit_range': [], 'device': 'cuda:0'}
+{'loss': 3.4906, 'learning_rate': 4.581239530988275e-05, 'epoch': 0.84}
+{'loss': 3.1281, 'learning_rate': 4.16247906197655e-05, 'epoch': 1.68}
+{'loss': 2.5455, 'learning_rate': 3.7437185929648245e-05, 'epoch': 2.51}
+{'loss': 2.1279, 'learning_rate': 3.324958123953099e-05, 'epoch': 3.35}
+{'loss': 2.0261, 'learning_rate': 2.906197654941374e-05, 'epoch': 4.19}
+{'loss': 1.9549, 'learning_rate': 2.4874371859296484e-05, 'epoch': 5.03}
+{'loss': 1.9065, 'learning_rate': 2.0686767169179232e-05, 'epoch': 5.86}
+{'loss': 1.8555, 'learning_rate': 1.6499162479061976e-05, 'epoch': 6.7}
+{'loss': 1.8387, 'learning_rate': 1.2311557788944725e-05, 'epoch': 7.54}
+{'loss': 1.8041, 'learning_rate': 8.123953098827471e-06, 'epoch': 8.38}
+{'loss': 1.7809, 'learning_rate': 3.936348408710218e-06, 'epoch': 9.21}
+{'train_runtime': 3444.1742, 'train_samples_per_second': 13.852, 'train_steps_per_second': 1.733, 'train_loss': 2.187024304056088, 'epoch': 10.0}
+***** train metrics *****
+  epoch                    =       10.0
+  train_loss               =      2.187
+  train_runtime            = 0:57:24.17
+  train_samples            =       4771
+  train_samples_per_second =     13.852
+  train_steps_per_second   =      1.733
+09/19/2023 11:12:20 - INFO - __main__ - *** Evaluate ***
+***** eval metrics *****
+  epoch                   =       10.0
+  eval_accuracy           =     0.6432
+  eval_loss               =     1.7969
+  eval_runtime            = 0:00:26.64
+  eval_samples            =        493
+  eval_samples_per_second =     18.505
+  eval_steps_per_second   =      2.327
+  perplexity              =     6.0309
