@@ -141,6 +141,85 @@ sparse1:8 (12.5% sparsity) fp32
   eval_samples_per_second =     11.747
   eval_steps_per_second   =      1.477
   perplexity              =     4.8595
+---------------------------------------------------------------------------------
+sparse1:8 (12.5% sparsity) hbfp8 all layers
+---------------------------------------------------------------------------------
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =      2.203
+  train_runtime            = 0:27:16.74
+  train_samples            =       4771
+  train_samples_per_second =      8.745
+  train_steps_per_second   =      1.094
+***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6775
+  eval_loss               =     1.5846
+  eval_runtime            = 0:00:39.91
+  eval_samples            =        493
+  eval_samples_per_second =     12.352
+  eval_steps_per_second   =      1.553
+  perplexity              =     4.8773
+  -------------------------------------------------------------------------------
+  sparse1:8 (12.5% sparsity) hbfp6, feed&forward and attention scores hbfp4
+  -------------------------------------------------------------------------------
+  ***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.4056
+  train_runtime            = 0:27:50.08
+  train_samples            =       4771
+  train_samples_per_second =       8.57
+  train_steps_per_second   =      1.072
+  ***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6658
+  eval_loss               =     1.6559
+  eval_runtime            = 0:00:40.00
+  eval_samples            =        493
+  eval_samples_per_second =     12.324
+  eval_steps_per_second   =       1.55
+  perplexity              =     5.2376
+  -------------------------------------------------------------------------------
+  sparse2:4-hbfp8 feed forward and projections
+  sparse1:8-hbfp6 softmax output
+  sparse1:8-hbfp4 softmax scores
+  -------------------------------------------------------------------------------
+  ***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.9774
+  train_runtime            = 0:29:29.97
+  train_samples            =       4771
+  train_samples_per_second =      8.087
+  train_steps_per_second   =      1.012
+  ***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.5969
+  eval_loss               =     2.1095
+  eval_runtime            = 0:00:42.99
+  eval_samples            =        493
+  eval_samples_per_second =     11.465
+  eval_steps_per_second   =      1.442
+  perplexity              =     8.2444
+  -------------------------------------------------------------------------------
+  sparse2:4 hbfp8 feed forward and projections
+  sparse1:8 hbfp8 softmax output and scores
+  -------------------------------------------------------------------------------
+***** train metrics *****
+  epoch                    =        3.0
+  train_loss               =     2.7783
+  train_runtime            = 0:23:06.42
+  train_samples            =       4771
+  train_samples_per_second =     10.324
+  train_steps_per_second   =      1.292
+  ***** eval metrics *****
+  epoch                   =        3.0
+  eval_accuracy           =     0.6189
+  eval_loss               =     1.9519
+  eval_runtime            = 0:00:38.12
+  eval_samples            =        493
+  eval_samples_per_second =     12.932
+  eval_steps_per_second   =      1.626
+  perplexity              =     6.0423
   -------------------------------------------------------------------------------
 sparse2:8 fp32
 ---------------------------------------------------------------------------------
@@ -235,3 +314,4 @@ sparse2:4 fp32 2x higher lr FP matmuls
   eval_samples_per_second =     18.505
   eval_steps_per_second   =      2.327
   perplexity              =     6.0309
+  

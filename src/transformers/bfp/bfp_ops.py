@@ -36,6 +36,7 @@ import itertools as it
 import logging
 import unittest
 import numpy as np
+import pickle
 
 class rounding_modes:
     """
@@ -265,7 +266,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update=False
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
                        num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, rearrange=False, 
                        sparsity_frac=0, N=[0, 0], M=[0, 0], sparsity_num_format='bfp', identifier='',
-                       sgd_update=False, unconstrained=False, bit_range=[], mant_bits_pow=None):
+                       sgd_update=False, unconstrained=False, bit_range=[], exceptions=[], mant_bits_pow=None):
 
     assert (num_format == 'bfp')
     assert (((sparsity_num_format == 'bfp') and (bfp_block_size > 0)) or (sparsity_num_format == 'fp32'))
@@ -485,9 +486,7 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     This way we garantee that everything in and out of the forward and backward operations is
     properly converted to bfp
     """
-
     name = _get_op_name(name, **bfp_args)
-
     class NewOpIn(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x, w):
@@ -515,11 +514,15 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
 
     def new_op(x, w, *args, **kwargs):
         x, w = new_op_in(x, w)
-        # w[0, 0:8]
-        # print("W:", w.shape) 
+        # if 'matmul' in name:
+            # query = x[0].detach().cpu().numpy()
+            # key = w[0].detach().cpu().numpy()
+            # kq_dict = {"query_wrapped": x[0], "key_wrapped": w[0]}
+            # PATH_TO_DICT = "/home/parsa_liza/experiments/kqv_distributions/hbfp-sparse-kq-wrapped.pkl"
+            # pickle.dump(kq_dict, open(PATH_TO_DICT, "wb"))
+            # print("W:", out.shape) 
         out = op(x, w, *args, **kwargs)
         return new_op_out(out)
-
     return new_op
 
 
@@ -532,6 +535,9 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
     This function is called when a bfp layer is defined. See BFPConv2d and BFPLinear below
     """
     op_name = _get_op_name(name, **bfp_args)
+    # print(name)
+    # if name in bfp_args["exceptions"]:
+        # print("yes")
     if op_name not in _bfp_ops:
         _bfp_ops[name] = _gen_bfp_op(op, name, bfp_args, transpose)
 
@@ -560,6 +566,7 @@ def unpack_bfp_args(kwargs):
                 ('sparsity_frac', 0),
                 ('unconstrained', False),
                 ('bit_range', []),
+                ('exceptions', []),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:
@@ -568,6 +575,7 @@ def unpack_bfp_args(kwargs):
             del kwargs[arg]
         else:
             bfp_args[arg] = default
+    # print(bfp_args)
     return bfp_args
 
 
@@ -591,6 +599,12 @@ def F_matmul_bfp(**kwargs):
     bfp_args = unpack_bfp_args(kwargs)
     if bfp_args['num_format'] == 'bfp':
         # print("************************************* BFP MATMUL *****************************************")
+        for op_dict in bfp_args["exceptions"]:
+            if "bfp_matmul" in op_dict.keys():
+                for arg_dict in op_dict["bfp_matmul"]:
+                    for key in arg_dict.keys():
+                        custom_value = arg_dict[key]
+                        bfp_args[key] = custom_value
         return _get_bfp_op(torch.matmul, 'matmul', bfp_args, True)
     else:
         return torch.matmul
