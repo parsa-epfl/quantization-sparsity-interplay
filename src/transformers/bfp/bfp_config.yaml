@@ -3,7 +3,7 @@ hbfp:
    sparsity_num_format: 'bfp' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
-   mant_bits: 3 
+   mant_bits: 7 
    weight_mant_bits: 15 
    bfp_tile_size: 8
    bfp_block_size: 64 
@@ -12,11 +12,17 @@ hbfp:
    grad_sparsity: False
    rearrange: False
    sparsity_frac: 0.6
-   N: [7]
-   M: [8]
+   N: [2]
+   M: [4]
    unconstrained: False
    bit_range: []
    exceptions:
-   - bfp_matmul:
-       - mant_bits: 5
+      linear:
+         layer_idx: [4, 5, 6, 11]
+         N: [7]
+         M: [8]
+      bfp_matmul:
+         layer_idx: [4, 5, 6, 11]
+         N: [7]
+         M: [8]
    device: 'cuda:0'

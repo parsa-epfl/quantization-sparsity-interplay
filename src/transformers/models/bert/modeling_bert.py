@@ -109,7 +109,7 @@ BERT_PRETRAINED_MODEL_ARCHIVE_LIST = [
     # See all BERT models at https://huggingface.co/models?filter=bert
 ]
 
-
+_LAYER_IDX = 0
 def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
     """Load tf checkpoints in a pytorch model."""
     try:
@@ -249,14 +249,18 @@ class BertSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
         ### Add bfp args (*TBC)
+        global _LAYER_IDX
+        self.layer_idx = _LAYER_IDX
+        _LAYER_IDX += 1
         self.bfp_args = bfp_util.get_bfp_args()
-        
+        # print(self.bfp_args)
+        if "exceptions" in self.bfp_args:
+            self.modify_bfp_args_for_layer("linear")
         if config.hidden_size % config.num_attention_heads != 0 and not hasattr(config, "embedding_size"):
             raise ValueError(
                 f"The hidden size ({config.hidden_size}) is not a multiple of the number of attention "
                 f"heads ({config.num_attention_heads})"
             )
-
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
@@ -279,6 +283,15 @@ class BertSelfAttention(nn.Module):
 
         self.is_decoder = config.is_decoder
 
+    def modify_bfp_args_for_layer(self, layer_type="linear"):
+        if layer_type in self.bfp_args["exceptions"]:
+            custom_args = self.bfp_args["exceptions"][layer_type]
+            # print(custom_args["layer_idx"])
+            if self.layer_idx in set(custom_args["layer_idx"]):
+                self.bfp_args["N"] = custom_args["N"]
+                self.bfp_args["M"] = custom_args["M"]
+            # print(cutom_args["layer_idx"])
+
     def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(new_x_shape)
@@ -300,7 +313,6 @@ class BertSelfAttention(nn.Module):
         # and values come from an encoder; the attention mask needs to be
         # such that the encoder's padding tokens are not attended to.
         is_cross_attention = encoder_hidden_states is not None
-
         if is_cross_attention and past_key_value is not None:
             # reuse k,v, cross_attentions
             key_layer = past_key_value[0]
@@ -373,7 +385,7 @@ class BertSelfAttention(nn.Module):
         # scores_before_sfmax = attention_scores[0].detach().cpu().numpy()
         # Normalize the attention scores to probabilities.
         attention_probs = nn.functional.softmax(attention_scores, dim=-1)
-        # scores_after_sfmax = attention_probs[0].detach().cpu().numpy()
+        scores_after_sfmax = attention_probs[0].detach().cpu().numpy()
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
         attention_probs = self.dropout(attention_probs)
@@ -384,8 +396,6 @@ class BertSelfAttention(nn.Module):
         # self.bfp_args["mantbits"] = 5
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
         context_layer = bfp_matmul(attention_probs, value_layer)
-        self.bfp_args["N"] = [2]
-        self.bfp_args["M"] = [4]
         # self.bfp_args["mantbits"] = 7
         # context_layer = torch.matmul(attention_probs, value_layer)
 
@@ -394,11 +404,11 @@ class BertSelfAttention(nn.Module):
         context_layer = context_layer.view(new_context_layer_shape)
 
         outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
-        #output = outputs[0].detach().cpu().numpy()
-        #output_dict = {"scores_before_sfmax": scores_before_sfmax, "scores_after_sfmax": scores_after_sfmax, 
-        #                "attention_output": output}
-        #PATH_TO_DICT = "/home/parsa_liza/experiments/kqv_distributions/fp-dense-attention-outputs-12-layer.pkl"
-        #pickle.dump(output_dict, open(PATH_TO_DICT, "wb"))
+        # output = outputs[0].detach().cpu().numpy()
+        # output_dict = {"scores_after_sfmax": scores_after_sfmax, "attention_output": output}
+        # print(self.layer_idx)
+        # PATH_TO_DICT = "/home/parsa_liza/experiments/layers/dense/" + str(_LAYER_IDX) + ".pkl"
+        # pickle.dump(output_dict, open(PATH_TO_DICT, "wb"))
         if self.is_decoder:
             outputs = outputs + (past_key_value,)
         return outputs
@@ -1083,7 +1093,6 @@ class BertModel(BertPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        # print(pooled_output)
         sequence_output = encoder_outputs[0]
         pooled_output = self.pooler(sequence_output) if self.pooler is not None else None
 

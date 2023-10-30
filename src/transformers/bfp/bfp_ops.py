@@ -203,6 +203,7 @@ def sparsity_hierarchial_n_m(t, device, N=[], M=[]):
 
 # Sparsity scheme 4: FP32 version
 def fp32_sparsity_hierarchial_n_m(t, device, N=[], M=[]):
+    # print(N, M)
     assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
     orig_shape = t.shape
     sparse_t = sparsity_hierarchial_n_m(t, device, N, M)
@@ -599,12 +600,13 @@ def F_matmul_bfp(**kwargs):
     bfp_args = unpack_bfp_args(kwargs)
     if bfp_args['num_format'] == 'bfp':
         # print("************************************* BFP MATMUL *****************************************")
-        for op_dict in bfp_args["exceptions"]:
-            if "bfp_matmul" in op_dict.keys():
-                for arg_dict in op_dict["bfp_matmul"]:
-                    for key in arg_dict.keys():
-                        custom_value = arg_dict[key]
-                        bfp_args[key] = custom_value
+        # for op_dict in bfp_args["exceptions"]:
+            # print(op_dict)
+            # if "bfp_matmull" in op_dict.keys():
+                # for arg_dict in op_dict["bfp_matmul"]:
+                    # for key in arg_dict.keys():
+                        # custom_value = arg_dict[key]
+                        # bfp_args[key] = custom_value
         return _get_bfp_op(torch.matmul, 'matmul', bfp_args, True)
     else:
         return torch.matmul

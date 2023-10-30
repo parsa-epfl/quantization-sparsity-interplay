@@ -3,7 +3,7 @@ blocksize=64
 mantbits=7
 sparsity_frac=0.6
 num_format=bfp
-sparsity_num_format=fp32
+sparsity_num_format=bfp
 rearrange=False
 
 N="[2]"
@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert_3ep_1:4_stage2of2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert_3ep_1:4_stage2of2/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert_3ep_hybrid_bfp8_sparse_stage2of2/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert_3ep_hybrid_bfp8_sparse_stage2of2/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -66,13 +66,22 @@ bit_range="[]"
    M: $M
    unconstrained: $unconstrained
    bit_range: $bit_range
+   exceptions:
+      linear:
+         layer_idx: [4, 5, 6, 11]
+         N: [7]
+         M: [8]
+      bfp_matmul:
+         layer_idx: [4, 5, 6, 11]
+         N: [7]
+         M: [8]
    device: 'cuda:0'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
    fi
 cd examples/pytorch/language-modeling
-CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
-    --model_name_or_path /home/parsa_liza/experiments/bert_3ep_1:4_stage1of2/quant_scheme2/fp32/fp32_[3]:[4] \
+CUDA_VISIBLE_DEVICES=1 python run_mlm.py \
+    --model_name_or_path /home/parsa_liza/experiments/bert_3ep_hybrid_sparse_stage1of2/quant_scheme2/fp32/fp32_[2]:[4] \
     --dataset_name wikitext \
     --dataset_config_name wikitext-2-raw-v1 \
     --per_device_train_batch_size 8 \
@@ -80,7 +89,7 @@ CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
     --do_train \
     --do_eval \
     --output_dir /tmp/test-mlm \
-    --output_dir /home/parsa_liza/experiments/bert_3ep_1:4_stage2of2/$benchmark/quant_scheme2/$filename  \
+    --output_dir /home/parsa_liza/experiments/bert_3ep_hybrid_bfp8_sparse_stage2of2/$benchmark/quant_scheme2/$filename  \
     --overwrite_output_dir \
     --learning_rate 2e-04 \
     --adam_beta1 0.9  \
