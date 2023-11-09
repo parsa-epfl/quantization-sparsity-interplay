@@ -38,6 +38,7 @@ import unittest
 import numpy as np
 import pickle
 
+NUM = 0
 class rounding_modes:
     """
     When converting fp32 tensors to bfp, the rounding mode can be chosen.
@@ -214,6 +215,21 @@ def bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N
     assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
     bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
     sparse_bfp_t = sparsity_hierarchial_n_m(bfp_t, device, N, M)
+    return sparse_bfp_t
+
+# Sparsity scheme 4 version 1: sparsify first, then quantize
+def bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N=[], M=[], sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
+    assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
+    t = sparsity_hierarchial_n_m(t, device, N, M)
+    # global NUM
+    # NUM += 1
+    # if NUM == 9:
+        # print(NUM, ": ", torch.sum(torch.where(t == 0.0, 1, 0)) / torch.numel(t))
+        # print(t[0][64:128])
+    sparse_bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+    # if NUM == 9:
+        # print(NUM, ": ", torch.sum(torch.where(sparse_bfp_t == 0.0, 1, 0)) / torch.numel(sparse_bfp_t))
+        # print(sparse_bfp_t[0][64:128])
     return sparse_bfp_t
 
 # Sparsity scheme 5: N:M sparsity at the block level
@@ -514,14 +530,16 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     new_op_out = NewOpOut.apply
 
     def new_op(x, w, *args, **kwargs):
+        if 'matmul' in name:
+            n = w.shape[2] * w.shape[3]
+            # print("before wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
+            m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
+            print("sparsity fraction:", m / n)
         x, w = new_op_in(x, w)
-        # if 'matmul' in name:
-            # query = x[0].detach().cpu().numpy()
-            # key = w[0].detach().cpu().numpy()
-            # kq_dict = {"query_wrapped": x[0], "key_wrapped": w[0]}
-            # PATH_TO_DICT = "/home/parsa_liza/experiments/kqv_distributions/hbfp-sparse-kq-wrapped.pkl"
-            # pickle.dump(kq_dict, open(PATH_TO_DICT, "wb"))
-            # print("W:", out.shape) 
+        if 'matmul' in name:
+            m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
+            print("sparsity fraction:", m / n)
+            # print("after wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
         out = op(x, w, *args, **kwargs)
         return new_op_out(out)
     return new_op
@@ -724,6 +742,16 @@ class TestCases(unittest.TestCase):
         epsilon = 0
         rounding_mode = 'determ'
 
+        tensor = torch.tensor([[-0.0380,  0.0151, -0.0335,  0.0410,  0.0390,  0.0000,  0.0107, -0.0040,
+         0.0028, -0.0377,  0.0000, -0.0726, -0.0207, -0.0178,  0.0121, -0.0316,
+         0.0000, -0.0444,  0.0309,  0.0212, -0.0650,  0.0444, -0.0256,  0.0338,
+        -0.0343, -0.0103, -0.0445, -0.0403,  0.0433, -0.0467,  0.0129,  0.0000,
+         0.0000, -0.0125, -0.0218, -0.0205, -0.0187, -0.0115, -0.0384, -0.0207,
+         0.0820,  0.0267,  0.0503,  0.0150, -0.0091,  0.0000,  0.0420,  0.0062,
+         0.0000, -0.0442, -0.0274, -0.0718,  0.0079, -0.0088,  0.0009,  0.0263,
+        -0.0032,  0.0084, -0.0159,  0.0117,  0.0148,  0.0000, -0.0617,  0.0058]]).to(device)
+        print(_float_to_bfp(tensor, mant_bits=7, epsilon=0.00000001, rounding_mode='stoc', device=device))
+
         for mant_bits in range(12):
             mant_bits +=1
             bfp_numbers = self.bfp(mant_bits)
@@ -791,8 +819,35 @@ def test_F_matmul_bfp():
     a = torch.tensor([[1, 2, 4, 8], [3, 7, 1, 2]]).to(device=device)
     b = torch.tensor([[2, 3, 5, 9], [3, 5, 9, 17], [4, 1, 8, 7], [6, 1, 3, 9]]).to(device=device)
     res = bfp_matmul(a, b)
+    print(res) 
+
+def test_F_matmul_bfp_v1():
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    bfp_args = {
+        'num_format': 'bfp',
+        'sparsity_num_format': 'bfp',
+        'rounding_mode': 'stoc',
+        'epsilon': 0.00000001,
+        'mant_bits': 7,
+        'weight_mant_bits': 15,
+        'bfp_tile_size': 64,
+        'bfp_block_size': 8,
+        'in_sparsity': False,
+        'w_sparsity': True,
+        'grad_sparsity': False,
+        'rearrange': False,
+        'N': [2],
+        'M': [4],
+        'sparsity_frac': 0.6,
+        'device': "cuda:0" if torch.cuda.is_available() else "cpu"
+    }
+    bfp_matmul = F_matmul_bfp(  num_format=bfp_args['num_format'], sparsity_num_format=bfp_args['sparsity_num_format'], mant_bits=bfp_args['mant_bits'], weight_mant_bits=bfp_args['weight_mant_bits'], 
+                                bfp_block_size=bfp_args['bfp_block_size'], in_sparsity=bfp_args['in_sparsity'], w_sparsity=bfp_args['w_sparsity'],
+                                grad_sparsity=bfp_args['grad_sparsity'], rearrange=bfp_args['rearrange'], N=bfp_args['N'], M=bfp_args['M'], sparsity_frac=bfp_args['sparsity_frac'], device=bfp_args['device'])
+    a = torch.tensor([[1, 1, 1, 1, 1, 1, 1, 1]]).to(device=device)
+    b = torch.tensor([[-0.33470154, -0.40996552, -0.35459518, -0.00056458,  0.41558838, -0.45715332, -0.21149445, -0.51885223]]).to(device=device)
+    res = bfp_matmul(a, b)
     print(res)
-    # assert res == torch.tensor([[50]]).to(device=device)
 
 def test_sparse():
     dtype = torch.float
@@ -818,6 +873,9 @@ def test_sparse():
     
 
 if __name__ == '__main__':
-    test_sparse()
+    # test_sparse()
     # test_F_matmul_bfp()
+    # test_F_matmul_bfp_v1()
+    test = TestCases()
+    test.test_float_to_bfp()
     # unittest.main(verbosity=2)
