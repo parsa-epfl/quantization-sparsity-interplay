@@ -530,15 +530,15 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     new_op_out = NewOpOut.apply
 
     def new_op(x, w, *args, **kwargs):
-        if 'matmul' in name:
-            n = w.shape[2] * w.shape[3]
+        # if 'matmul' in name:
+            # n = w.shape[2] * w.shape[3]
             # print("before wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
-            m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
-            print("sparsity fraction:", m / n)
+            # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
+            # print("sparsity fraction:", m / n)
         x, w = new_op_in(x, w)
-        if 'matmul' in name:
-            m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
-            print("sparsity fraction:", m / n)
+        # if 'matmul' in name:
+            # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
+            # print("sparsity fraction:", m / n)
             # print("after wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
         out = op(x, w, *args, **kwargs)
         return new_op_out(out)

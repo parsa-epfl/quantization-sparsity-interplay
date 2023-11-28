@@ -249,9 +249,9 @@ class BertSelfAttention(nn.Module):
     def __init__(self, config, position_embedding_type=None):
         super().__init__()
         ### Add bfp args (*TBC)
-        global _LAYER_IDX
-        self.layer_idx = _LAYER_IDX
-        _LAYER_IDX += 1
+        # global _LAYER_IDX
+        # self.layer_idx = _LAYER_IDX
+        # _LAYER_IDX += 1
         self.bfp_args = bfp_util.get_bfp_args()
         # print(self.bfp_args)
         if "exceptions" in self.bfp_args:
@@ -402,11 +402,11 @@ class BertSelfAttention(nn.Module):
         context_layer = context_layer.view(new_context_layer_shape)
 
         outputs = (context_layer, attention_probs) if output_attentions else (context_layer,)
-        output = outputs[0].detach().cpu().numpy()
-        output_dict = {"scores_after_sfmax": scores_after_sfmax, "attention_output": output}
-        print(self.layer_idx)
-        PATH_TO_DICT = "/home/parsa_liza/experiments/layers/sparse/" + str(self.layer_idx) + ".pkl"
-        pickle.dump(output_dict, open(PATH_TO_DICT, "wb"))
+        # output = outputs[0].detach().cpu().numpy()
+        # output_dict = {"scores_after_sfmax": scores_after_sfmax, "attention_output": output}
+        # print(self.layer_idx)
+        # PATH_TO_DICT = "/home/parsa_liza/experiments/layers/densee/" + str(self.layer_idx) + ".pkl"
+        # pickle.dump(output_dict, open(PATH_TO_DICT, "wb"))
         if self.is_decoder:
             outputs = outputs + (past_key_value,)
         return outputs
@@ -719,8 +719,8 @@ class BertPredictionHeadTransform(nn.Module):
         ### Add bfp args (*TBC)
         self.bfp_args = bfp_util.get_bfp_args()
         
-        # self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        # self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -744,8 +744,8 @@ class BertLMPredictionHead(nn.Module):
 
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
-        # self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
-        self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
+        # self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
 
@@ -753,7 +753,7 @@ class BertLMPredictionHead(nn.Module):
         self.decoder.bias = self.bias
 
     def forward(self, hidden_states):
-        print(h_states)
+        # print(h_states)
         hidden_states = self.transform(hidden_states)
         hidden_states = self.decoder(hidden_states)
         return hidden_states

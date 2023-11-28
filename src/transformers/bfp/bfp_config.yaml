@@ -1,6 +1,6 @@
 hbfp:
    num_format: 'bfp'
-   sparsity_num_format: 'bfp' 
+   sparsity_num_format: 'fp32' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
    mant_bits: 7 
@@ -8,7 +8,7 @@ hbfp:
    bfp_tile_size: 8
    bfp_block_size: 64 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: False
    sparsity_frac: 0.6
