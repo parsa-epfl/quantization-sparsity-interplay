@@ -38,7 +38,9 @@ import unittest
 import numpy as np
 import pickle
 
-NUM = 0
+
+T_UPDATE_MASK = 100
+
 class rounding_modes:
     """
     When converting fp32 tensors to bfp, the rounding mode can be chosen.
@@ -202,6 +204,36 @@ def sparsity_hierarchial_n_m(t, device, N=[], M=[]):
         t = torch.scatter(t, 1, non_zero_idx[1].unsqueeze(0), non_zero_elements)
     return t
 
+def sparsity_n_m_get_mask(t, device, N=[], M=[]):
+    assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
+    t = t.contiguous().view(1, -1)
+    for idx in range(len(N)):
+        non_zero_idx = torch.nonzero(t, as_tuple=True)
+        non_zero_elements = t[non_zero_idx].unsqueeze(0)
+        # print(non_zero_elements.shape)
+        pad_size = M[idx] - (non_zero_elements.shape[1] % M[idx])
+        # print("pad_size", pad_size)
+        non_zero_elements = F.pad(non_zero_elements, (0, pad_size), 'constant') 
+        non_zero_elements = non_zero_elements.contiguous().view(-1, M[idx])
+
+        temp_t = torch.abs(non_zero_elements)
+        _, sparse_idx = torch.topk(temp_t, k=(M[idx]-N[idx]), dim=1, largest=False)
+        zero_mask = torch.full(temp_t.shape, 1).to(device=device)
+        zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
+    return zero_mask
+
+def sparsity_n_m_apply_mask(t, zero_mask, device, N=[], M=[]):
+    orig_shape = t.shape
+    assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
+    t = t.contiguous().view(1, -1)
+    pad_size = M[0] - (t.shape[1] % M[0])
+    t = F.pad(t, (0, pad_size), 'constant') 
+    t = t.contiguous().view(-1, M[0])
+    sparse_t = t * zero_mask
+    sparse_t = sparse_t.contiguous().view(1, -1)
+    sparse_t = sparse_t.narrow(-1, 0, (sparse_t.shape[1]-pad_size))
+    return sparse_t.contiguous().view(orig_shape)
+
 # Sparsity scheme 4: FP32 version
 def fp32_sparsity_hierarchial_n_m(t, device, N=[], M=[]):
     # print(N, M)
@@ -210,26 +242,18 @@ def fp32_sparsity_hierarchial_n_m(t, device, N=[], M=[]):
     sparse_t = sparsity_hierarchial_n_m(t, device, N, M)
     return sparse_t.contiguous().view(orig_shape)
 
-# Sparsity scheme 4: BFP version
+# Sparsity scheme 4: BFP then sparsity
 def bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N=[], M=[], sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
     bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
     sparse_bfp_t = sparsity_hierarchial_n_m(bfp_t, device, N, M)
     return sparse_bfp_t
 
-# Sparsity scheme 4 version 1: sparsify first, then quantize
-def bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N=[], M=[], sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
+# Sparsity scheme 4: sparsity then BFP
+def sparsity_bfp_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N=[], M=[], sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
     t = sparsity_hierarchial_n_m(t, device, N, M)
-    # global NUM
-    # NUM += 1
-    # if NUM == 9:
-        # print(NUM, ": ", torch.sum(torch.where(t == 0.0, 1, 0)) / torch.numel(t))
-        # print(t[0][64:128])
     sparse_bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
-    # if NUM == 9:
-        # print(NUM, ": ", torch.sum(torch.where(sparse_bfp_t == 0.0, 1, 0)) / torch.numel(sparse_bfp_t))
-        # print(sparse_bfp_t[0][64:128])
     return sparse_bfp_t
 
 # Sparsity scheme 5: N:M sparsity at the block level
@@ -276,7 +300,7 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update=False
         # return block_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac, sgd_update, unconstrained, bit_range, exp_given)
         # return block_sparsity_one_each_row(t, mant_bits, epsilon, rounding_mode, device, cols, sgd_update, unconstrained, bit_range, exp_given)
         # return bfp_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac, sgd_update, unconstrained, bit_range, exp_given)
-        return bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
+        return sparsity_bfp_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
         # return inter_intra_bfp_sparsity_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
 
 
@@ -662,6 +686,28 @@ class BFPConv2d(torch.nn.Conv2d):
         else:
             raise NotImplementedError('NumFormat not implemented')
 
+# class BFPLinear(torch.nn.Linear):
+#     """
+#     bfp linear layer
+#     """
+#     def __init__(self, in_features, out_features, bias=True, **kwargs):
+#         self.bfp_args = unpack_bfp_args(kwargs)
+#         super().__init__(in_features, out_features, bias)
+#         self.num_format = self.bfp_args['num_format']
+#         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
+
+#     def forward(self, input):
+#         if self.num_format == 'fp32':
+#             return F.linear(input, self.weight, self.bias)
+#         elif self.num_format == 'bfp':
+#             l = self.linear_op(input, self.weight, None)
+#             if self.bias is not None:
+#                 return l + self.bias
+#             else:
+#                 return l
+
+#         else:
+#             raise NotImplementedError('NumFormat not implemented')
 
 class BFPLinear(torch.nn.Linear):
     """
@@ -671,18 +717,22 @@ class BFPLinear(torch.nn.Linear):
         self.bfp_args = unpack_bfp_args(kwargs)
         super().__init__(in_features, out_features, bias)
         self.num_format = self.bfp_args['num_format']
+        self.sparsity_num_format = self.bfp_args['sparsity_num_format']
         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
+        self.sparsity_mask = None
+        self.iter_count = 0
 
     def forward(self, input):
         if self.num_format == 'fp32':
             return F.linear(input, self.weight, self.bias)
-        elif self.num_format == 'bfp':
-            l = self.linear_op(input, self.weight, None)
-            if self.bias is not None:
-                return l + self.bias
-            else:
-                return l
+        elif self.sparsity_num_format == 'fp32':
+            if self.iter_count % T_UPDATE_MASK == 0:
+                self.sparsity_mask = sparsity_n_m_get_mask(self.weight, device=self.bfp_args["device"], N=self.bfp_args["N"], M=self.bfp_args["M"])
 
+            self.iter_count += 1 
+            sparse_weight = sparsity_n_m_apply_mask(self.weight, self.sparsity_mask, device=self.bfp_args["device"], N=self.bfp_args["N"], M=self.bfp_args["M"])
+            # print("sparsity fraction", torch.sum(torch.where(sparse_weight == 0, 1, 0)) / torch.numel(sparse_weight))
+            return F.linear(input, sparse_weight, self.bias)
         else:
             raise NotImplementedError('NumFormat not implemented')
 

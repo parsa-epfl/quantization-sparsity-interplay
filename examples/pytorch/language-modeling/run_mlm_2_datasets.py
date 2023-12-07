@@ -278,7 +278,7 @@ def main():
     #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
-    raw_wiki = load_dataset("wikipedia", "20220301.en", split=f"train[50%:65%]")
+    raw_wiki = load_dataset("wikipedia", "20220301.en", split=f"train[65%:70%]") # was 50-65d
     # raw_wiki_val = load_dataset("wikipedia", "20220301.en", split=f"train[:{data_args.validation_split_percentage}%]")
     raw_wiki = raw_wiki.remove_columns([col for col in raw_wiki.column_names if col != "text"])
     # raw_wiki = raw_wiki.add_column("validation", raw_wiki_val)
@@ -289,7 +289,7 @@ def main():
     # raw_wiki = raw_wiki.add_column("train", raw_wiki_train)
 
 
-    raw_corpus = load_dataset("bookcorpus", split=f"train[50%:65%]")
+    raw_corpus = load_dataset("bookcorpus", split=f"train[65%:70%]") # was 50-65
 
     # raw_corpus_val = load_dataset("bookcorpus", split=f"train[:{data_args.validation_split_percentage}%]")
     # raw_corpus.add_column("validation", raw_corpus_val)

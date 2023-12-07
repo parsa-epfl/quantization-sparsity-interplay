@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert-sparse-corpus_2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert-sparse-corpus_2/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -72,14 +72,14 @@ bit_range="[]"
    fi
 cd examples/pytorch/language-modeling
 CUDA_VISIBLE_DEVICES=0 python run_mlm_2_datasets.py \
-    --model_name_or_path /home/parsa_liza/experiments/bert-sparse-corpus/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-100000 \
+    --model_name_or_path /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-3/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-56500 \
     --dataset_name None \
     --dataset_config_name None \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 16 \
     --do_train \
     --output_dir /tmp/test-mlm \
-    --output_dir /home/parsa_liza/experiments/bert-sparse-corpus_2/$benchmark/quant_scheme2/$filename  \
+    --output_dir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$benchmark/quant_scheme2/$filename  \
     --overwrite_output_dir \
-    --learning_rate 4.8e-5 \
+    --learning_rate 3.86e-05 \
     --num_train_epochs 1 \

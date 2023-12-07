@@ -719,8 +719,8 @@ class BertPredictionHeadTransform(nn.Module):
         ### Add bfp args (*TBC)
         self.bfp_args = bfp_util.get_bfp_args()
         
-        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
-        # self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        # self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         if isinstance(config.hidden_act, str):
             self.transform_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -744,8 +744,8 @@ class BertLMPredictionHead(nn.Module):
 
         # The output weights are the same as the input embeddings, but there is
         # an output-only bias for each token.
-        self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
-        # self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        # self.decoder = BFPLinear(config.hidden_size, config.vocab_size, bias=False, **self.bfp_args)
+        self.decoder = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         self.bias = nn.Parameter(torch.zeros(config.vocab_size))
 
@@ -1888,8 +1888,8 @@ class BertForQuestionAnswering(BertPreTrainedModel):
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config, add_pooling_layer=False)
-        self.qa_outputs = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
-
+        #self.qa_outputs = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
+        self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
         # Initialize weights and apply final processing
         self.post_init()
 

@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/debugg_50/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/debugg_50/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -27,12 +27,12 @@ bit_range="[]"
       rm /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_ops.py
       cp ../../../src/transformers/bfp/bfp_ops.py /usr/local/lib/python3.8/dist-packages/transformers/bfp/
       echo -e "hbfp:
-   num_format: '$num_format'
+   num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
    rounding_mode: 'stoc' 
-   epsilon: 0.00000001
+   epsilon: 0.00000001 
    mant_bits: $mantbits 
-   weight_mant_bits: 15
+   weight_mant_bits: 15 
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
@@ -49,7 +49,7 @@ bit_range="[]"
    else
       rm ../../../src/transformers/bfp/bfp_config.yaml
          echo -e "hbfp:
-   num_format: '$num_format'
+   num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
@@ -70,21 +70,16 @@ bit_range="[]"
       cd ../../../
       pip install -e .
    fi
-cd examples/pytorch/language-modeling
-CUDA_VISIBLE_DEVICES=0 python run_mlm.py \
-    --model_name_or_path /home/parsa_liza/experiments/bert_fp_dense/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-1500 \
-    --dataset_name wikitext \
-    --dataset_config_name wikitext-2-raw-v1 \
-    --per_device_train_batch_size 8 \
-    --per_device_eval_batch_size 8 \
+cd examples/pytorch/question-answering
+CUDA_VISIBLE_DEVICES=0 python run_qa.py \
+    --model_name_or_path /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-3/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-56500 \
+    --dataset_name squad \
     --do_train \
     --do_eval \
-    --output_dir /home/parsa_liza/experiments/debugg/$benchmark/quant_scheme2/$filename  \
-    --overwrite_output_dir \
-    --learning_rate 1e-04 \
-    --adam_beta1 0.9  \
-    --adam_beta2 0.999  \
-    --adam_epsilon 1e-08  \
-    --lr_scheduler_type linear \
-    --optim BFPAdam \
-    --num_train_epochs 3
+    --per_device_train_batch_size 16 \
+    --per_device_eval_batch_size 16 \
+    --learning_rate 3e-5 \
+    --num_train_epochs 2 \
+    --max_seq_length 384 \
+    --doc_stride 128 \
+    --output_dir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask/$benchmark/quant_scheme2/$filename  \
