@@ -627,6 +627,78 @@ class BFPConv2d(torch.nn.Conv2d):
             raise NotImplementedError('NumFormat not implemented')
 
 
+class BFPConv1D(torch.nn.Module):
+    def __init__(self, nf, nx, **kwargs):
+        self.bfp_args = unpack_bfp_args(kwargs)
+
+        super().__init__()
+        self.nf = nf
+        self.weight = torch.nn.Parameter(torch.empty(nx, nf))
+        self.bias = torch.nn.Parameter(torch.zeros(nf))
+        torch.nn.init.normal_(self.weight, std=0.02)
+        self.num_format = self.bfp_args['num_format']
+        self.op = _get_bfp_op(torch.mm, '2Dmatmul', self.bfp_args, True)
+        # self.op = _get_bfp_op(F.addmm, 'Conv1D', self.bfp_args)
+
+    def forward(self, x):
+        size_out = x.size()[:-1] + (self.nf,)
+        x = self.op(x.view(-1, x.size(-1)), self.weight)
+        x = x + self.bias
+        x = x.view(size_out)
+        return x
+
+
+       #  if self.num_format == 'fp32':
+       #      x = F.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
+       #      x = x.view(size_out)
+       #      return x
+
+       #  elif self.num_format == 'bfp':
+       #      x = self.op(None, x.view(-1, x.size(-1)), self.weight)
+       #      if self.bias is not None:
+       #          x = x + self.bias
+       #          x = x.view(size_out)
+       #          return x        
+       #      else:
+       #          x = x.view(size_out)
+       #          return x
+
+       #  else:
+       #      raise NotImplementedError('NumFormat not implemented')
+
+            
+
+# class BFPConv1d(torch.nn.Conv1d):
+#     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+#                  padding=0, dilation=1, groups=1, bias=True, **kwargs):
+#         self.bfp_args = unpack_bfp_args(kwargs)
+# 
+#         super().__init__(in_channels, out_channels, kernel_size, stride,
+#                          padding, dilation, groups, bias)
+#         self.num_format = self.bfp_args['num_format']
+#         self.conv_op = _get_bfp_op(F.conv1d, 'Conv1d', self.bfp_args)
+# 
+#     def forward(self, input):
+#         if self.num_format == 'fp32':
+#             return F.conv1d(input, self.weight, self.bias, self.stride,
+#                             self.padding, self.dilation, self.groups)
+# 
+#         elif self.num_format == 'bfp':
+#             conv = self.conv_op(input, self.weight, None, self.stride,
+#                                 self.padding, self.dilation, self.groups)
+#             if self.bias is not None:
+#                 #print(f'shape conv: {conv.shape}')
+#                 #print(f'bias conv: {self.bias.shape}')
+#                 return conv + self.bias
+#             else:
+#                 return conv
+# 
+#         else:
+#             raise NotImplementedError('NumFormat not implemented')
+# 
+
+
+
 class BFPLinear(torch.nn.Linear):
     """
     bfp linear layer

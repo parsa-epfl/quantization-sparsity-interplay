@@ -47,7 +47,7 @@ from ...utils.model_parallel_utils import assert_device_map, get_device_map
 from .configuration_gpt2 import GPT2Config
 
 ### BFP imports
-from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, BFPConv1D, F_matmul_bfp
 from ...bfp import bfp_util
 
 logger = logging.get_logger(__name__)
@@ -126,7 +126,7 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
 class GPT2Attention(nn.Module):
     def __init__(self, config, is_cross_attention=False, layer_idx=None):
         super().__init__()
-
+        self.bfp_args = bfp_util.get_bfp_args()
         max_positions = config.max_position_embeddings
         self.register_buffer(
             "bias",
@@ -155,11 +155,15 @@ class GPT2Attention(nn.Module):
         self.reorder_and_upcast_attn = config.reorder_and_upcast_attn
 
         if self.is_cross_attention:
-            self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
-            self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
+            self.c_attn = BFPConv1D(2*self.embed_dim, self.embed_dim, **self.bfp_args)
+            self.q_attn = BFPConv1D(self.embed_dim, self.embed_dim, **self.bfp_args)
+            # self.c_attn = Conv1D(2 * self.embed_dim, self.embed_dim)
+            # self.q_attn = Conv1D(self.embed_dim, self.embed_dim)
         else:
-            self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
-        self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
+            self.c_attn = BFPConv1D(3*self.embed_dim, self.embed_dim, **self.bfp_args)
+            # self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
+        self.c_proj = BFPConv1D(self.embed_dim, self.embed_dim, **self.bfp_args)
+        # self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
 
         self.attn_dropout = nn.Dropout(config.attn_pdrop)
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
@@ -182,7 +186,9 @@ class GPT2Attention(nn.Module):
         self.pruned_heads = self.pruned_heads.union(heads)
 
     def _attn(self, query, key, value, attention_mask=None, head_mask=None):
-        attn_weights = torch.matmul(query, key.transpose(-1, -2))
+        bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        # attn_weights = torch.matmul(query, key.transpose(-1, -2))
+        attn_weights = bfp_matmul(query, key.transpose(-1, -2))
 
         if self.scale_attn_weights:
             attn_weights = attn_weights / torch.full(
@@ -217,7 +223,8 @@ class GPT2Attention(nn.Module):
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
-        attn_output = torch.matmul(attn_weights, value)
+        # attn_output = torch.matmul(attn_weights, value)
+        attn_output = bfp_matmul(attn_weights, value)
 
         return attn_output, attn_weights
 
@@ -269,7 +276,9 @@ class GPT2Attention(nn.Module):
         if head_mask is not None:
             attn_weights = attn_weights * head_mask
 
-        attn_output = torch.matmul(attn_weights, value)
+        bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        # attn_output = torch.matmul(attn_weights, value)
+        attn_output = bfp_matmul(attn_weights, value)
 
         return attn_output, attn_weights
 
@@ -346,9 +355,12 @@ class GPT2Attention(nn.Module):
 class GPT2MLP(nn.Module):
     def __init__(self, intermediate_size, config):
         super().__init__()
+        self.bfp_args = bfp_util.get_bfp_args()
         embed_dim = config.hidden_size
-        self.c_fc = Conv1D(intermediate_size, embed_dim)
-        self.c_proj = Conv1D(embed_dim, intermediate_size)
+        self.c_fc = BFPConv1D(intermediate_size, embed_dim, **self.bfp_args)
+        self.c_proj = BFPConv1D(embed_dim, intermediate_size, **self.bfp_args)
+        # self.c_fc = Conv1D(intermediate_size, embed_dim)
+        # self.c_proj = Conv1D(embed_dim, intermediate_size)
         self.act = ACT2FN[config.activation_function]
         self.dropout = nn.Dropout(config.resid_pdrop)
 
@@ -951,7 +963,9 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.transformer = GPT2Model(config)
-        self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.bfp_args = bfp_util.get_bfp_args()
+        # self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.lm_head = BFPLinear(config.n_embd, config.vocab_size, bias=False, **self.bfp_args) 
 
         # Model parallel
         self.model_parallel = False
@@ -1120,8 +1134,10 @@ class GPT2DoubleHeadsModel(GPT2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         config.num_labels = 1
+        self.bfp_args = bfp_util.get_bfp_args()
         self.transformer = GPT2Model(config)
-        self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        # self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.lm_head = BFPLinear(config.n_embd, config.vocab_size, bias=False, **self.bfp_args)
         self.multiple_choice_head = SequenceSummary(config)
 
         # Model parallel
@@ -1334,8 +1350,10 @@ class GPT2ForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
+        self.bfp_args = bfp_util.get_bfp_args()
         self.transformer = GPT2Model(config)
-        self.score = nn.Linear(config.n_embd, self.num_labels, bias=False)
+        # self.score = nn.Linear(config.n_embd, self.num_labels, bias=False)
+        self.score = BFPLinear(config.n_embd, self.num_labels, bias=False, **self.bfp_args)
 
         # Model parallel
         self.model_parallel = False
@@ -1460,7 +1478,7 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
-
+        self.bfp_args = bfp_util.get_bfp_args()
         self.transformer = GPT2Model(config)
         if hasattr(config, "classifier_dropout") and config.classifier_dropout is not None:
             classifier_dropout = config.classifier_dropout
@@ -1469,7 +1487,8 @@ class GPT2ForTokenClassification(GPT2PreTrainedModel):
         else:
             classifier_dropout = 0.1
         self.dropout = nn.Dropout(classifier_dropout)
-        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        # self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args)
 
         # Model parallel
         self.model_parallel = False
