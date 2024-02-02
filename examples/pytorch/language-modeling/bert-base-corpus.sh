@@ -1,7 +1,7 @@
 compute_node=$1
 blocksize=64
 mantbits=7
-sparsity_frac=0.6
+sparsity_frac=0.7
 num_format=bfp
 sparsity_num_format=fp32
 rearrange=False
@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-0.7-unstr/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /home/parsa_liza/experiments/bert-sparse-corpus-0.7-unstr/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -36,7 +36,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -72,14 +72,14 @@ bit_range="[]"
    fi
 cd examples/pytorch/language-modeling
 CUDA_VISIBLE_DEVICES=0 python run_mlm_2_datasets.py \
-    --model_name_or_path /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-3/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-56500 \
+    --model_name_or_path bert-base-uncased \
     --dataset_name None \
     --dataset_config_name None \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 16 \
     --do_train \
     --output_dir /tmp/test-mlm \
-    --output_dir /home/parsa_liza/experiments/bert-sparse-corpus-fixed-mask-4/$benchmark/quant_scheme2/$filename  \
+    --output_dir /home/parsa_liza/experiments/bert-sparse-corpus-0.7-unstr/$benchmark/quant_scheme2/$filename  \
     --overwrite_output_dir \
-    --learning_rate 3.86e-05 \
-    --num_train_epochs 1 \
+    --learning_rate 5e-05 \
+    --max_steps 200000 \

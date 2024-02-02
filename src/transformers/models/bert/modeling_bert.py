@@ -351,8 +351,8 @@ class BertSelfAttention(nn.Module):
         # self.bfp_args["M"] = [8]
         #self.bfp_args["mantbits"] = 3
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
-        # attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        # attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
 
         if self.position_embedding_type == "relative_key" or self.position_embedding_type == "relative_key_query":
             query_length, key_length = query_layer.shape[2], key_layer.shape[2]
@@ -393,9 +393,9 @@ class BertSelfAttention(nn.Module):
             attention_probs = attention_probs * head_mask
         # self.bfp_args["mantbits"] = 5
         bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        context_layer = bfp_matmul(attention_probs, value_layer)
+        # context_layer = bfp_matmul(attention_probs, value_layer)
         # self.bfp_args["mantbits"] = 7
-        # context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = torch.matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
