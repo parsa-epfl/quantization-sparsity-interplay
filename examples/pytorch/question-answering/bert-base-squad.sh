@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask_2x_lr_val/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask_2x_lr_val/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -36,7 +36,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: False
+   w_sparsity: True
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -71,14 +71,15 @@ bit_range="[]"
       pip install -e .
    fi
 cd examples/pytorch/question-answering
-CUDA_VISIBLE_DEVICES=1 python run_qa.py \
-    --model_name_or_path /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask_2x_lr/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-14500 \
+python3 run_qa.py \
+    --model_name_or_path /parsadata1/lisa/experiments/bert-sparse-corpus-0.6-unstr/quant_scheme2/fp32/fp32_[2]:[4]/\
     --dataset_name squad \
+    --do_train \
     --do_eval \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 16 \
-    --learning_rate 6e-5 \
+    --learning_rate 5e-5 \
     --num_train_epochs 3 \
     --max_seq_length 384 \
     --doc_stride 128 \
-    --output_dir /home/parsa_liza/experiments/bert-base-sparse-squad-fixed_mask_2x_lr_val/$benchmark/quant_scheme2/$filename  \
+    --output_dir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$filename  \

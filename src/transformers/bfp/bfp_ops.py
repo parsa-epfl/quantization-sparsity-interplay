@@ -162,10 +162,12 @@ def block_sparsity_one_each_row(t, mant_bits, epsilon, rounding_mode, device, co
 def sparsity_unstructured(t, device, sparsity_frac=0):
     assert (sparsity_frac > 0)
     temp = t.contiguous().view(1, -1)
+    device = temp.device
     _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
     zero_mask = torch.full(temp.shape, 1).to(device=device)
+    sparse_idx = sparse_idx.to(device=device)
     zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
-    return torch.where(zero_mask==0, 0, temp)
+    return torch.where(zero_mask==0, 0, temp).to(device=device)
 
 # Sparsity scheme 3: FP32 version
 def fp32_sparsity_unstructured(t, device, sparsity_frac=0):
@@ -560,6 +562,7 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
             # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
             # print("sparsity fraction:", m / n)
         x, w = new_op_in(x, w)
+        # print(torch.mean(torch.where(w == 0.0, 1, 0), dtype=torch.float32))
         # if 'matmul' in name:
             # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
             # print("sparsity fraction:", m / n)
@@ -686,29 +689,6 @@ class BFPConv2d(torch.nn.Conv2d):
         else:
             raise NotImplementedError('NumFormat not implemented')
 
-# class BFPLinear(torch.nn.Linear):
-#     """
-#     bfp linear layer
-#     """
-#     def __init__(self, in_features, out_features, bias=True, **kwargs):
-#         self.bfp_args = unpack_bfp_args(kwargs)
-#         super().__init__(in_features, out_features, bias)
-#         self.num_format = self.bfp_args['num_format']
-#         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
-
-#     def forward(self, input):
-#         if self.num_format == 'fp32':
-#             return F.linear(input, self.weight, self.bias)
-#         elif self.num_format == 'bfp':
-#             l = self.linear_op(input, self.weight, None)
-#             if self.bias is not None:
-#                 return l + self.bias
-#             else:
-#                 return l
-
-#         else:
-#             raise NotImplementedError('NumFormat not implemented')
-
 class BFPLinear(torch.nn.Linear):
     """
     bfp linear layer
@@ -717,22 +697,18 @@ class BFPLinear(torch.nn.Linear):
         self.bfp_args = unpack_bfp_args(kwargs)
         super().__init__(in_features, out_features, bias)
         self.num_format = self.bfp_args['num_format']
-        self.sparsity_num_format = self.bfp_args['sparsity_num_format']
         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
-        self.sparsity_mask = None
-        self.iter_count = 0
 
     def forward(self, input):
         if self.num_format == 'fp32':
             return F.linear(input, self.weight, self.bias)
-        elif self.sparsity_num_format == 'fp32':
-            if self.iter_count % T_UPDATE_MASK == 0:
-                self.sparsity_mask = sparsity_n_m_get_mask(self.weight, device=self.bfp_args["device"], N=self.bfp_args["N"], M=self.bfp_args["M"])
+        elif self.num_format == 'bfp':
+            l = self.linear_op(input, self.weight, None)
+            if self.bias is not None:
+                return l + self.bias
+            else:
+                return l
 
-            self.iter_count += 1 
-            sparse_weight = sparsity_n_m_apply_mask(self.weight, self.sparsity_mask, device=self.bfp_args["device"], N=self.bfp_args["N"], M=self.bfp_args["M"])
-            # print("sparsity fraction", torch.sum(torch.where(sparse_weight == 0, 1, 0)) / torch.numel(sparse_weight))
-            return F.linear(input, sparse_weight, self.bias)
         else:
             raise NotImplementedError('NumFormat not implemented')
 
