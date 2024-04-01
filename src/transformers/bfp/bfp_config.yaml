@@ -1,9 +1,9 @@
 hbfp:
    num_format: 'bfp'
-   sparsity_num_format: 'fp32' 
+   sparsity_num_format: 'bfp' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
-   mant_bits: 7 
+   mant_bits: 5 
    weight_mant_bits: 15 
    bfp_tile_size: 8
    bfp_block_size: 64 
@@ -11,9 +11,21 @@ hbfp:
    w_sparsity: True
    grad_sparsity: False
    rearrange: False
-   sparsity_frac: 0.6
+   sparsity_frac: 0.5
    N: [2]
    M: [4]
    unconstrained: False
    bit_range: []
-   device: 'cuda:0'
+   exceptions:
+      attn:
+         layer_idx: [-1]
+         modifications:
+            mant_bits: 7
+            w_sparsity: False
+      feed_forward:
+         layer_idx: [0, 11]
+         modifications:
+            mant_bits: 7
+            w_sparsity: False
+   
+   device: 'cuda'

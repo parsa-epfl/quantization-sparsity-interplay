@@ -38,6 +38,10 @@ from ...utils import (
 )
 from .configuration_opt import OPTConfig
 
+### BFP imports
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp import bfp_util
+
 
 logger = logging.get_logger(__name__)
 
@@ -64,6 +68,22 @@ OPT_PRETRAINED_MODEL_ARCHIVE_LIST = [
     # See all OPT models at https://huggingface.co/models?filter=opt
 ]
 
+_LAYER_IDX = 0
+
+class LayerNorm(nn.LayerNorm):
+    def forward(self, x):
+        t = x.dtype
+        print(x.type(torch.float32).dtype)
+        x = super().forward(x.type(torch.float32))
+        return x.type(t)
+
+def modify_bfp_args_for_layer(bfp_args, layer_idx, layer_type="attn"):
+    if layer_type in bfp_args["exceptions"]:
+        custom_args = bfp_args["exceptions"][layer_type]
+        if layer_idx in custom_args["layer_idx"] or -1 in custom_args["layer_idx"]:
+            for key in custom_args["modifications"].keys():
+                bfp_args[key] = custom_args["modifications"][key]
+    return bfp_args
 
 def _make_causal_mask(input_ids_shape: torch.Size, dtype: torch.dtype, past_key_values_length: int = 0):
     """
@@ -125,6 +145,7 @@ class OPTAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
+        layer_idx: int,
         dropout: float = 0.0,
         is_decoder: bool = False,
         bias: bool = True,
@@ -134,7 +155,8 @@ class OPTAttention(nn.Module):
         self.num_heads = num_heads
         self.dropout = dropout
         self.head_dim = embed_dim // num_heads
-
+        self.layer_idx = layer_idx
+        
         if (self.head_dim * num_heads) != self.embed_dim:
             raise ValueError(
                 f"embed_dim must be divisible by num_heads (got `embed_dim`: {self.embed_dim}"
@@ -143,10 +165,18 @@ class OPTAttention(nn.Module):
         self.scaling = self.head_dim**-0.5
         self.is_decoder = is_decoder
 
-        self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
-        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        self.bfp_args = bfp_util.get_bfp_args()
+        if "exceptions" in self.bfp_args:
+            self.bfp_args = modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "attn")
+
+        self.k_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        self.v_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        self.q_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        self.out_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        # self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        # self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        # self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        # self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
         return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -274,12 +304,18 @@ class OPTDecoderLayer(nn.Module):
     def __init__(self, config: OPTConfig):
         super().__init__()
         self.embed_dim = config.hidden_size
+
+        global _LAYER_IDX
+        self.layer_idx = _LAYER_IDX
+        _LAYER_IDX += 1
+
         self.self_attn = OPTAttention(
             embed_dim=self.embed_dim,
             num_heads=config.num_attention_heads,
             dropout=config.attention_dropout,
             is_decoder=True,
             bias=config.enable_bias,
+            layer_idx=self.layer_idx
         )
         self.do_layer_norm_before = config.do_layer_norm_before
         self.dropout = config.dropout
@@ -288,8 +324,15 @@ class OPTDecoderLayer(nn.Module):
         self.self_attn_layer_norm = nn.LayerNorm(
             self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine
         )
-        self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
-        self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
+
+        self.bfp_args = bfp_util.get_bfp_args()
+        if "exceptions" in self.bfp_args:
+            self.bfp_args = modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "feed_forward")
+        
+        self.fc1 = BFPLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, **self.bfp_args)
+        self.fc2 = BFPLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, **self.bfp_args)
+        # self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
+        # self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine)
 
     def forward(
@@ -405,6 +448,10 @@ class OPTPreTrainedModel(PreTrainedModel):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.bias is not None:
                 module.bias.data.zero_()
+        if isinstance(module, BFPLinear):
+            module.weight.data.normal_(mean=0.0, std=std)
+            if module.bias is not None:
+                module.bias.data.zero_()
         elif isinstance(module, nn.Embedding):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.padding_idx is not None:
@@ -495,14 +542,18 @@ class OPTDecoder(OPTPreTrainedModel):
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.word_embed_proj_dim, self.padding_idx)
         self.embed_positions = OPTLearnedPositionalEmbedding(config.max_position_embeddings, config.hidden_size)
+        
+        self.bfp_args = bfp_util.get_bfp_args()
 
         if config.word_embed_proj_dim != config.hidden_size:
-            self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
+            self.project_out = BFPLinear(config.hidden_size, config.word_embed_proj_dim, bias=False, **self.bfp_args)
+            # self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
         else:
             self.project_out = None
 
         if config.word_embed_proj_dim != config.hidden_size:
-            self.project_in = nn.Linear(config.word_embed_proj_dim, config.hidden_size, bias=False)
+            self.project_in = BFPLinear(config.word_embed_proj_dim, config.hidden_size, bias=False, **self.bfp_args)
+            # self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
         else:
             self.project_in = None
 

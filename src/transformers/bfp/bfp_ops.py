@@ -38,8 +38,10 @@ import unittest
 import numpy as np
 import pickle
 
+from scipy.stats import wasserstein_distance
 
-T_UPDATE_MASK = 100
+dists_arr = []
+_MODE = "TRAIN"
 
 class rounding_modes:
     """
@@ -179,8 +181,22 @@ def fp32_sparsity_unstructured(t, device, sparsity_frac=0):
 # Sparsity scheme 3: BFP version
 def bfp_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac=0, sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     assert (sparsity_frac > 0)
-    bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
-    sparse_bfp_t = sparsity_unstructured(bfp_t, device, sparsity_frac)
+    sparse_t = sparsity_unstructured(t, device, sparsity_frac)
+    sparse_bfp_t, _ = _no_sparsity_float_to_bfp(sparse_t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+    global _MODE
+    if _MODE == "DEBUG":
+        if len(dists_arr) == 200:
+            print(torch.mean(t), torch.numel(t))
+            np.save(f"/parsadata1/lisa/experiments/proof_validation/ff_hbfp8.npy", np.array(dists_arr))
+            _MODE = "TRAIN"
+        else:
+            q, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+            q_tilda = torch.where(sparse_bfp_t.flatten() == 0.0, t.flatten(), q.flatten())
+            err_1 = (q_tilda - t.flatten()).detach().cpu().numpy()
+            err_2 = (q.flatten() - t.flatten()).detach().cpu().numpy()
+            step = 64
+            for i in range(0, len(err_1), step):
+                dists_arr.append(wasserstein_distance(err_1[i:i+step], err_2[i:i+step]))
     return sparse_bfp_t
 
 # Sparsity scheme 4: Generic any level hierarchial element wise N:M sparsity for BFP/FP32
@@ -556,17 +572,7 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
     new_op_out = NewOpOut.apply
 
     def new_op(x, w, *args, **kwargs):
-        # if 'matmul' in name:
-            # n = w.shape[2] * w.shape[3]
-            # print("before wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
-            # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
-            # print("sparsity fraction:", m / n)
         x, w = new_op_in(x, w)
-        # print(torch.mean(torch.where(w == 0.0, 1, 0), dtype=torch.float32))
-        # if 'matmul' in name:
-            # m = torch.sum(torch.where(w == 0.0, 1, 0)[0][0])
-            # print("sparsity fraction:", m / n)
-            # print("after wrapping", w[0, 0, 0:8, 0].detach().cpu().numpy())
         out = op(x, w, *args, **kwargs)
         return new_op_out(out)
     return new_op
@@ -644,14 +650,6 @@ def F_matmul_bfp(**kwargs):
     """
     bfp_args = unpack_bfp_args(kwargs)
     if bfp_args['num_format'] == 'bfp':
-        # print("************************************* BFP MATMUL *****************************************")
-        # for op_dict in bfp_args["exceptions"]:
-            # print(op_dict)
-            # if "bfp_matmull" in op_dict.keys():
-                # for arg_dict in op_dict["bfp_matmul"]:
-                    # for key in arg_dict.keys():
-                        # custom_value = arg_dict[key]
-                        # bfp_args[key] = custom_value
         return _get_bfp_op(torch.matmul, 'matmul', bfp_args, True)
     else:
         return torch.matmul
@@ -697,6 +695,8 @@ class BFPLinear(torch.nn.Linear):
         self.bfp_args = unpack_bfp_args(kwargs)
         super().__init__(in_features, out_features, bias)
         self.num_format = self.bfp_args['num_format']
+        print("------***------")
+        print(self.bfp_args)
         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
 
     def forward(self, input):

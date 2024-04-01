@@ -6,7 +6,7 @@ def get_bfp_args():
     with open(os.path.join(__location__, 'bfp_config.yaml')) as file:
         try:
             hbfpConfig = yaml.safe_load(file)
-            print(hbfpConfig['hbfp'])   
+            # print(hbfpConfig['hbfp'])   
             return hbfpConfig['hbfp']
         except yaml.YAMLError as exc:
             print(exc)
