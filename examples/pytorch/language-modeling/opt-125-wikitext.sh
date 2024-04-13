@@ -1,6 +1,6 @@
 compute_node=$1
-blocksize=64
-mantbits=5
+blocksize=32
+mantbits=7
 sparsity_frac=0.5
 num_format=bfp
 sparsity_num_format=bfp
@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /parsadata1/lisa/experiments/opt_ff_only/125m/hbfp6-8-debug/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /parsadata1/lisa/experiments/opt_ff_only/125m/hbfp6-8-debug/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /parsadata1/lisa/experiments/mx_formats/125m/mxfp6_2:4/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /parsadata1/lisa/experiments/mx_formats/125m/mxfp6_2:4/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -36,7 +36,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -44,17 +44,6 @@ bit_range="[]"
    M: $M 
    unconstrained: $unconstrained
    bit_range: $bit_range
-   exceptions:
-      attn:
-         layer_idx: [-1]
-         modifications:
-            mant_bits: 7
-            w_sparsity: False
-      feed_forward:
-         layer_idx: [0, 11]
-         modifications:
-            mant_bits: 7
-            w_sparsity: False
 
    device: 'cuda'" >> /usr/local/lib/python3.8/dist-packages/transformers/bfp/bfp_config.yaml
       cd ../../../
@@ -70,7 +59,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -78,18 +67,11 @@ bit_range="[]"
    M: $M
    unconstrained: $unconstrained
    bit_range: $bit_range
-   exceptions:
-      attn:
-         layer_idx: [-1]
-         modifications:
-            mant_bits: 7
-            w_sparsity: False
-      feed_forward:
-         layer_idx: [0, 11]
-         modifications:
-            mant_bits: 7
-            w_sparsity: False
-   
+   sparsity_mode: 'structured'
+   mx_w_elem_format: 'fp6_e2m3'
+   mx_a_elem_format: 'fp6_e2m3'
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
@@ -104,12 +86,11 @@ python3 run_opt.py \
     --per_device_eval_batch_size 8 \
     --do_train \
     --do_eval \
-    --output_dir /parsadata1/lisa/experiments/opt_ff_only/125m/hbfp6-8-debug/$benchmark/quant_scheme2/$filename \
+    --output_dir /parsadata1/lisa/experiments/mx_formats/125m/mxfp6_2:4/$benchmark/quant_scheme2/$filename \
     --overwrite_output_dir \
     --learning_rate 1e-04 \
     --adam_beta1 0.9  \
     --adam_beta2 0.999  \
     --adam_epsilon 1e-08  \
     --lr_scheduler_type linear \
-    --optim BFPAdam \
     --num_train_epochs 3 \

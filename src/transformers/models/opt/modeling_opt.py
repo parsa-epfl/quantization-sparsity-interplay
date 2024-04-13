@@ -40,8 +40,8 @@ from .configuration_opt import OPTConfig
 
 ### BFP imports
 from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp.mx_layers import MXLinear
 from ...bfp import bfp_util
-
 
 logger = logging.get_logger(__name__)
 
@@ -76,14 +76,6 @@ class LayerNorm(nn.LayerNorm):
         print(x.type(torch.float32).dtype)
         x = super().forward(x.type(torch.float32))
         return x.type(t)
-
-def modify_bfp_args_for_layer(bfp_args, layer_idx, layer_type="attn"):
-    if layer_type in bfp_args["exceptions"]:
-        custom_args = bfp_args["exceptions"][layer_type]
-        if layer_idx in custom_args["layer_idx"] or -1 in custom_args["layer_idx"]:
-            for key in custom_args["modifications"].keys():
-                bfp_args[key] = custom_args["modifications"][key]
-    return bfp_args
 
 def _make_causal_mask(input_ids_shape: torch.Size, dtype: torch.dtype, past_key_values_length: int = 0):
     """
@@ -167,16 +159,22 @@ class OPTAttention(nn.Module):
 
         self.bfp_args = bfp_util.get_bfp_args()
         if "exceptions" in self.bfp_args:
-            self.bfp_args = modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "attn")
+            self.bfp_args = bfp_util.modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "attn")
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
 
-        self.k_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-        self.v_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-        self.q_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-        self.out_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        # self.k_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        # self.v_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        # self.q_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+        # self.out_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
         # self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         # self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         # self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         # self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+        self.k_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.v_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.q_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.out_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
 
     def _shape(self, tensor: torch.Tensor, seq_len: int, bsz: int):
         return tensor.view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -327,12 +325,16 @@ class OPTDecoderLayer(nn.Module):
 
         self.bfp_args = bfp_util.get_bfp_args()
         if "exceptions" in self.bfp_args:
-            self.bfp_args = modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "feed_forward")
+            self.bfp_args = bfp_util.modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "feed_forward")
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
         
-        self.fc1 = BFPLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, **self.bfp_args)
-        self.fc2 = BFPLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, **self.bfp_args)
+        # self.fc1 = BFPLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, **self.bfp_args)
+        # self.fc2 = BFPLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, **self.bfp_args)
         # self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
         # self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
+        self.fc1 = MXLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.fc2 = MXLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine)
 
     def forward(
@@ -546,14 +548,14 @@ class OPTDecoder(OPTPreTrainedModel):
         self.bfp_args = bfp_util.get_bfp_args()
 
         if config.word_embed_proj_dim != config.hidden_size:
-            self.project_out = BFPLinear(config.hidden_size, config.word_embed_proj_dim, bias=False, **self.bfp_args)
-            # self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
+            # self.project_out = BFPLinear(config.hidden_size, config.word_embed_proj_dim, bias=False, **self.bfp_args)
+            self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
         else:
             self.project_out = None
 
         if config.word_embed_proj_dim != config.hidden_size:
-            self.project_in = BFPLinear(config.word_embed_proj_dim, config.hidden_size, bias=False, **self.bfp_args)
-            # self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
+            # self.project_in = BFPLinear(config.word_embed_proj_dim, config.hidden_size, bias=False, **self.bfp_args)
+            self.project_out = nn.Linear(config.hidden_size, config.word_embed_proj_dim, bias=False)
         else:
             self.project_in = None
 
