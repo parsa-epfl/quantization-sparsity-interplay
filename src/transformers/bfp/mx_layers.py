@@ -44,12 +44,16 @@ class MXLinear(Linear):
         self.sparsity_frac = sparsity_frac
         self.N = N 
         self.M = M
-        
+        self.sparsity_init = False
 
     def forward(self, inputs):
         if self.sparsity:
-            if self.sparsity_mode == "structured":
-                self.weight = torch.nn.Parameter(fp32_sparsity_hierarchial_n_m(self.weight, self.device, self.N, self.M))
-            else:
-                self.weight = torch.nn.Parameter(fp32_sparsity_unstructured(self.weight, self.device, self.sparsity_frac))
+            if not self.sparsity_init:
+                if self.sparsity_mode == "structured":
+                    print("I'm here")
+                    self.weight = torch.nn.Parameter(fp32_sparsity_hierarchial_n_m(self.weight, self.device, self.N, self.M))
+                else:
+                    print("I'm hereee")
+                    self.weight = torch.nn.Parameter(fp32_sparsity_unstructured(self.weight, self.device, self.sparsity_frac))
+                self.sparsity_init = True
         return super().forward(inputs)

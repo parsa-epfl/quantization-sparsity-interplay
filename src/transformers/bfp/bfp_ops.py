@@ -168,14 +168,16 @@ def block_sparsity_one_each_row(t, mant_bits, epsilon, rounding_mode, device, co
 # Sparsity scheme 3: Zero out k% of all elements (bfp/fp32) in a tensor
 # Note: Tensor is returned in (1, -1) shape to prevent one re-conversion later for BFP
 def sparsity_unstructured(t, device, sparsity_frac=0):
+    # print(t.shape)
+    # print(t.dtype)
     assert (sparsity_frac > 0)
     temp = t.contiguous().view(1, -1)
     device = temp.device
-    _, sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)
+    sparse_idx = torch.topk(torch.abs(temp), k=int(temp.shape[1]*sparsity_frac), dim=1, largest=False)[1]
     zero_mask = torch.full(temp.shape, 1).to(device=device)
     sparse_idx = sparse_idx.to(device=device)
     zero_mask.scatter_(index=sparse_idx, dim=1, value=0)
-    return torch.where(zero_mask==0, 0, temp).to(device=device)
+    return torch.where(zero_mask==0, 0, temp).to(dtype=t.dtype, device=device)
 
 # Sparsity scheme 3: FP32 version
 def fp32_sparsity_unstructured(t, device, sparsity_frac=0):
@@ -484,12 +486,14 @@ def MxM_pre_processing(x, w, transpose, **bfp_args):
             return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), torch.transpose(float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'), -1, -2))
         else:
             return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), torch.transpose(float_to_bfp_blocked(torch.transpose(w, -1, -2), **bfp_args, identifier='w'), -1, -2))
+            # return (x, torch.transpose(float_to_bfp_blocked(torch.transpose(w, -1, -2), **bfp_args, identifier='w'), -1, -2))
     else:
         if rearrange == True:
             new_x, new_w = rearrange_mats(x, torch.transpose(w, -1, -2), device)
             return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'))
         else:
             return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), w)
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
@@ -674,6 +678,45 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
     return _bfp_ops[name]
 
 
+# def unpack_bfp_args(kwargs):
+#     """
+#     Set up the bfp arguments
+#     """
+#     bfp_args = {}
+#     bfp_argn = [('num_format', 'fp32'),
+#                 ('sparsity_num_format', 'fp32'),
+#                 ('rounding_mode', 'stoc'),
+#                 ('epsilon', 1e-8),
+#                 ('mant_bits', 0),
+#                 ('bfp_tile_size', 0),
+#                 ('bfp_block_size', 0),
+#                 ('weight_mant_bits', 0),
+#                 ('in_sparsity', False),
+#                 ('w_sparsity', False),
+#                 ('grad_sparsity', False),
+#                 ('N', [0, 0]),
+#                 ('M', [0, 0]),
+#                 ('rearrange', False),
+#                 ('sparsity_frac', 0),
+#                 ('unconstrained', False),
+#                 ('bit_range', []),
+#                 ('exceptions', []),
+#                 ('sparsity_mode', 'structured'),
+#                 ('device', 'cpu'),
+#                 ('mx_w_elem_format', 'int8'),
+#                 ('mx_a_elem_format', 'int8'),
+#                 ('scale_bits', 8),
+#                 ('bfloat', 16)]
+
+#     for arg, default in bfp_argn:
+#         if arg in kwargs:
+#             bfp_args[arg] = kwargs[arg]
+#             del kwargs[arg]
+#         else:
+#             bfp_args[arg] = default
+#     # print(bfp_args)
+#     return bfp_args
+
 def unpack_bfp_args(kwargs):
     """
     Set up the bfp arguments
@@ -697,12 +740,7 @@ def unpack_bfp_args(kwargs):
                 ('unconstrained', False),
                 ('bit_range', []),
                 ('exceptions', []),
-                ('sparsity_mode', 'structured'),
-                ('device', 'cpu'),
-                ('mx_w_elem_format', 'int8'),
-                ('mx_a_elem_format', 'int8'),
-                ('scale_bits', 8),
-                ('bfloat', 16)]
+                ('device', 'cuda')]
 
     for arg, default in bfp_argn:
         if arg in kwargs:
@@ -770,30 +808,6 @@ class BFPConv2d(torch.nn.Conv2d):
         else:
             raise NotImplementedError('NumFormat not implemented')
 
-# class BFPLinear(torch.nn.Linear):
-#     """
-#     bfp linear layer
-#     """
-#     def __init__(self, in_features, out_features, bias=True, **kwargs):
-#         self.bfp_args = unpack_bfp_args(kwargs)
-#         super().__init__(in_features, out_features, bias)
-#         self.num_format = self.bfp_args['num_format']
-#         print("------***------")
-#         print(self.bfp_args)
-#         self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
-
-#     def forward(self, input):
-#         if self.num_format == 'fp32':
-#             return F.linear(input, self.weight, self.bias)
-#         elif self.num_format == 'bfp':
-#             l = self.linear_op(input, self.weight, None)
-#             if self.bias is not None:
-#                 return l + self.bias
-#             else:
-#                 return l
-
-#         else:
-#             raise NotImplementedError('NumFormat not implemented')
 
 class BFPLinear(torch.nn.Linear):
     """

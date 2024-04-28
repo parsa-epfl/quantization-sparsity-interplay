@@ -23,6 +23,7 @@ https://huggingface.co/models?filter=fill-mask
 
 import logging
 import math
+import numpy as np
 import os
 import sys
 from dataclasses import dataclass, field
@@ -57,6 +58,7 @@ from transformers.utils.versions import require_version
 
 
 from accelerate import Accelerator
+import tensor_parallel as tp
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")
@@ -216,7 +218,7 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     Perplexity computation adapted from SparseGPT framework
     """
     print('Evaluating ...')
-
+    # model = model.to(dev)
     testenc = testenc.input_ids
     nsamples = testenc.numel() // model.seqlen
     print(len(testenc))
@@ -307,6 +309,12 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         nlls.append(neg_log_likelihood)
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
     print(f"Perplexity: {ppl.item():3f}")
+    if os.path.exists("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy"):
+        prev_stats = np.load("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy")
+        prev_stats = np.append(prev_stats, ppl.item())
+    else:
+        prev_stats = np.array([ppl.item()])
+    np.save("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy", prev_stats)
     if log_wandb:
          wandb.log({f'{dataset}/perplexity': ppl.item()})
 
@@ -400,12 +408,16 @@ def main():
         )
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name)
-
     if model_args.model_name_or_path:
-        model = OPTForCausalLM.from_pretrained(
+        model = tp.tensor_parallel(OPTForCausalLM.from_pretrained(
             model_args.model_name_or_path,
-            torch_dtype=torch.float32,
-        )
+            torch_dtype=torch.bfloat16,
+        ))
+        # model = OPTForCausalLM.from_pretrained(
+        #     model_args.model_name_or_path,
+        #     torch_dtype=torch.bfloat16,
+        # )
+        # model.load_state_dict(torch.load("/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model_no_lm_head.pth"), strict=False)
         model.seqlen = model.config.max_position_embeddings
     else:
         model = AutoModelForCausalLM.from_config(config)
@@ -420,9 +432,9 @@ def main():
 
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
-    embedding_size = model.get_input_embeddings().weight.shape[0]
-    if len(tokenizer) > embedding_size:
-        model.resize_token_embeddings(len(tokenizer))
+    # embedding_size = model.get_input_embeddings().weight.shape[0]
+    # if len(tokenizer) > embedding_size:
+    #     model.resize_token_embeddings(len(tokenizer))
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
@@ -458,12 +470,12 @@ def main():
 
     if data_args.block_size is None:
         block_size = tokenizer.model_max_length
-        if block_size > 1024:
+        if block_size > 512:
             logger.warning(
                 f"The tokenizer picked seems to have a very large `model_max_length` ({tokenizer.model_max_length}). "
                 "Picking 1024 instead. You can change that default value by passing --block_size xxx."
             )
-            block_size = 1024
+            block_size = 512
     else:
         if data_args.block_size > tokenizer.model_max_length:
             logger.warning(
@@ -511,7 +523,7 @@ def main():
         train_dataset = lm_datasets["train"]
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = train_dataset.select(range(max_train_samples))
+            train_dataset = train_dataset.select(range(max_train_samples)) 
 
     # Validation data
     testdata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
@@ -525,7 +537,7 @@ def main():
             return logits.argmax(dim=-1)
     
     # Initialize our Trainer
-    trainer = accelerator.prepare(Trainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
@@ -537,7 +549,7 @@ def main():
         preprocess_logits_for_metrics=preprocess_logits_for_metrics
         if training_args.do_eval and not is_torch_tpu_available()
         else None,
-    ))
+    )
 
     # Training
     if training_args.do_train:
@@ -547,7 +559,9 @@ def main():
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()  # Saves the tokenizer too for easy upload
+        # trainer.save_model()  # Saves the tokenizer too for easy upload
+        # with tp.save_tensor_parallel(model):
+        #    torch.save(model.state_dict(), "/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model.pth")
 
         metrics = train_result.metrics
 
@@ -556,9 +570,9 @@ def main():
         )
         metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
-        trainer.log_metrics("train", metrics)
-        trainer.save_metrics("train", metrics)
-        trainer.save_state()
+        # trainer.log_metrics("train", metrics)
+        # trainer.save_metrics("train", metrics)
+        # trainer.save_state()
 
     # Evaluation
     if training_args.do_eval:

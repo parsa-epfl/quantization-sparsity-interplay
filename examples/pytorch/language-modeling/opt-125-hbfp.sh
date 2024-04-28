@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /parsadata1/lisa/experiments/magn_based/125m/fp_0.5/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /parsadata1/lisa/experiments/magn_based/125m/fp_0.5/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /parsadata1/lisa/experiments/magn_based/125m/hbfp8_0.5/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /parsadata1/lisa/experiments/magn_based/125m/hbfp8_0.5/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -73,7 +73,7 @@ bit_range="[]"
    fi
 cd examples/pytorch/language-modeling
 python3 run_opt.py \
-    --model_name_or_path facebook/opt-125m \
+    --model_name_or_path /parsadata1/lisa/experiments/magn_based/125m/fp_0.5/quant_scheme2/fp32/fp32_[2]:[4] \
     --tokenizer_name facebook/opt-125m \
     --dataset_name wikitext \
     --dataset_config_name wikitext-2-raw-v1 \
@@ -81,7 +81,7 @@ python3 run_opt.py \
     --per_device_eval_batch_size 8 \
     --do_train \
     --do_eval \
-    --output_dir /parsadata1/lisa/experiments/magn_based/125m/fp_0.5/$benchmark/quant_scheme2/$filename \
+    --output_dir /parsadata1/lisa/experiments/magn_based/125m/hbfp8_0.5/$benchmark/quant_scheme2/$filename \
     --overwrite_output_dir \
     --learning_rate 1e-04 \
     --adam_beta1 0.9  \
