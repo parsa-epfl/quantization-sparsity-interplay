@@ -1,14 +1,14 @@
 hbfp:
    num_format: 'bfp'
-   sparsity_num_format: 'fp32' 
+   sparsity_num_format: 'bfp' 
    rounding_mode: 'stoc' 
    epsilon: 0.00000001 
-   mant_bits: 7 
+   mant_bits: 5 
    weight_mant_bits: 15 
    bfp_tile_size: 8
-   bfp_block_size: 64 
+   bfp_block_size: 32 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: False
    sparsity_frac: 0.5
@@ -16,4 +16,9 @@ hbfp:
    M: [4]
    unconstrained: False
    bit_range: []
+   sparsity_mode: 'unstructured'
+   mx_w_elem_format: 'fp8_e4m3'
+   mx_a_elem_format: 'fp8_e4m3'
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'

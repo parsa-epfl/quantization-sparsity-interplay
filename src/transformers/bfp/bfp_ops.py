@@ -678,45 +678,6 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
     return _bfp_ops[name]
 
 
-# def unpack_bfp_args(kwargs):
-#     """
-#     Set up the bfp arguments
-#     """
-#     bfp_args = {}
-#     bfp_argn = [('num_format', 'fp32'),
-#                 ('sparsity_num_format', 'fp32'),
-#                 ('rounding_mode', 'stoc'),
-#                 ('epsilon', 1e-8),
-#                 ('mant_bits', 0),
-#                 ('bfp_tile_size', 0),
-#                 ('bfp_block_size', 0),
-#                 ('weight_mant_bits', 0),
-#                 ('in_sparsity', False),
-#                 ('w_sparsity', False),
-#                 ('grad_sparsity', False),
-#                 ('N', [0, 0]),
-#                 ('M', [0, 0]),
-#                 ('rearrange', False),
-#                 ('sparsity_frac', 0),
-#                 ('unconstrained', False),
-#                 ('bit_range', []),
-#                 ('exceptions', []),
-#                 ('sparsity_mode', 'structured'),
-#                 ('device', 'cpu'),
-#                 ('mx_w_elem_format', 'int8'),
-#                 ('mx_a_elem_format', 'int8'),
-#                 ('scale_bits', 8),
-#                 ('bfloat', 16)]
-
-#     for arg, default in bfp_argn:
-#         if arg in kwargs:
-#             bfp_args[arg] = kwargs[arg]
-#             del kwargs[arg]
-#         else:
-#             bfp_args[arg] = default
-#     # print(bfp_args)
-#     return bfp_args
-
 def unpack_bfp_args(kwargs):
     """
     Set up the bfp arguments
@@ -740,7 +701,12 @@ def unpack_bfp_args(kwargs):
                 ('unconstrained', False),
                 ('bit_range', []),
                 ('exceptions', []),
-                ('device', 'cuda')]
+                ('sparsity_mode', 'structured'),
+                ('device', 'cpu'),
+                ('mx_w_elem_format', 'int8'),
+                ('mx_a_elem_format', 'int8'),
+                ('scale_bits', 8),
+                ('bfloat', 16)]
 
     for arg, default in bfp_argn:
         if arg in kwargs:
@@ -750,6 +716,40 @@ def unpack_bfp_args(kwargs):
             bfp_args[arg] = default
     # print(bfp_args)
     return bfp_args
+
+# def unpack_bfp_args(kwargs):
+#     """
+#     Set up the bfp arguments
+#     """
+#     bfp_args = {}
+#     bfp_argn = [('num_format', 'fp32'),
+#                 ('sparsity_num_format', 'fp32'),
+#                 ('rounding_mode', 'stoc'),
+#                 ('epsilon', 1e-8),
+#                 ('mant_bits', 0),
+#                 ('bfp_tile_size', 0),
+#                 ('bfp_block_size', 0),
+#                 ('weight_mant_bits', 0),
+#                 ('in_sparsity', False),
+#                 ('w_sparsity', False),
+#                 ('grad_sparsity', False),
+#                 ('N', [0, 0]),
+#                 ('M', [0, 0]),
+#                 ('rearrange', False),
+#                 ('sparsity_frac', 0),
+#                 ('unconstrained', False),
+#                 ('bit_range', []),
+#                 ('exceptions', []),
+#                 ('device', 'cuda')]
+
+#     for arg, default in bfp_argn:
+#         if arg in kwargs:
+#             bfp_args[arg] = kwargs[arg]
+#             del kwargs[arg]
+#         else:
+#             bfp_args[arg] = default
+#     # print(bfp_args)
+#     return bfp_args
 
 
 def F_linear_bfp(**kwargs):

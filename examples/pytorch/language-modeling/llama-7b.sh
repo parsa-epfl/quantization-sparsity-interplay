@@ -1,9 +1,9 @@
 compute_node=$1
-blocksize=64
-mantbits=7
+blocksize=32
+mantbits=5
 sparsity_frac=0.5
 num_format=bfp
-sparsity_num_format=fp32
+sparsity_num_format=bfp
 rearrange=False
 
 N="[2]"
@@ -58,7 +58,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -66,6 +66,11 @@ bit_range="[]"
    M: $M
    unconstrained: $unconstrained
    bit_range: $bit_range
+   sparsity_mode: 'unstructured'
+   mx_w_elem_format: 'fp8_e4m3'
+   mx_a_elem_format: 'fp8_e4m3'
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
@@ -79,6 +84,7 @@ python3 run_llama.py \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 1 \
     --do_eval \
+    --block_size 1024 \
     --remove_unused_columns False \
     --output_dir /parsadata1/lisa/experiments/llama-debug/ \
     --overwrite_output_dir \

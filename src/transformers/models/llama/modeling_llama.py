@@ -61,6 +61,13 @@ logger = logging.get_logger(__name__)
 _CONFIG_FOR_DOC = "LlamaConfig"
 
 
+### BFP imports
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+### MX imports
+from ...bfp.mx_layers import MXLinear
+from ...bfp import bfp_util
+
+
 def _get_unpad_data(attention_mask):
     seqlens_in_batch = attention_mask.sum(dim=-1, dtype=torch.int32)
     indices = torch.nonzero(attention_mask.flatten(), as_tuple=False).flatten()
@@ -214,9 +221,21 @@ class LlamaMLP(nn.Module):
         self.config = config
         self.hidden_size = config.hidden_size
         self.intermediate_size = config.intermediate_size
-        self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
-        self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
-        self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
+
+        self.bfp_args = bfp_util.get_bfp_args()
+        
+        # self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
+        # self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
+        # self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
+
+        # self.gate_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
+        # self.up_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
+        # self.down_proj = BFPLinear(self.intermediate_size, self.hidden_size, bias=False, **self.bfp_args)
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+        self.gate_proj = MXLinear(self.hidden_size, self.intermediate_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.up_proj = MXLinear(self.hidden_size, self.intermediate_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.down_proj = MXLinear(self.intermediate_size, self.hidden_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
@@ -283,11 +302,24 @@ class LlamaAttention(nn.Module):
                 f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
                 f" and `num_heads`: {self.num_heads})."
             )
-
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
-        self.o_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=config.attention_bias)
+        self.bfp_args = bfp_util.get_bfp_args()
+        if "exceptions" in self.bfp_args:
+            self.bfp_args = bfp_util.modify_bfp_args_for_layer(self.bfp_args, self.layer_idx, "attn")
+        
+        # self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias)
+        # self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
+        # self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
+        # self.o_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=config.attention_bias)
+        # self.q_proj = BFPLinear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        # self.k_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        # self.v_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        # self.o_proj = BFPLinear(self.hidden_size, self.hidden_size, bias=config.attention_bias, **self.bfp_args)
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+        self.q_proj = MXLinear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.k_proj = MXLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.v_proj = MXLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
+        self.o_proj = MXLinear(self.hidden_size, self.hidden_size, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         self._init_rope()
 
     def _init_rope(self):
