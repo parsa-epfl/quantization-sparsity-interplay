@@ -1,7 +1,3 @@
-# flake8: noqa
-# There's no way to ignore "F401 '...' imported but unused" warnings in this
-# module, but to preserve other warnings. So, don't check this module at all.
-
 # Copyright 2022 The HuggingFace Team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +17,10 @@ from typing import TYPE_CHECKING
 from ..utils import OptionalDependencyNotAvailable, _LazyModule, is_flax_available, is_tf_available, is_torch_available
 
 
-_import_structure = {"configuration_utils": ["GenerationConfig"]}
-
+_import_structure = {
+    "configuration_utils": ["GenerationConfig", "GenerationMode"],
+    "streamers": ["TextIteratorStreamer", "TextStreamer"],
+}
 
 try:
     if not is_torch_available():
@@ -42,38 +40,55 @@ else:
         "BeamSearchScorer",
         "ConstrainedBeamSearchScorer",
     ]
+    _import_structure["candidate_generator"] = [
+        "AssistedCandidateGenerator",
+        "CandidateGenerator",
+        "PromptLookupCandidateGenerator",
+    ]
     _import_structure["logits_process"] = [
+        "AlternatingCodebooksLogitsProcessor",
+        "ClassifierFreeGuidanceLogitsProcessor",
+        "EncoderNoRepeatNGramLogitsProcessor",
+        "EncoderRepetitionPenaltyLogitsProcessor",
+        "EpsilonLogitsWarper",
+        "EtaLogitsWarper",
+        "ExponentialDecayLengthPenalty",
         "ForcedBOSTokenLogitsProcessor",
         "ForcedEOSTokenLogitsProcessor",
+        "ForceTokensLogitsProcessor",
         "HammingDiversityLogitsProcessor",
         "InfNanRemoveLogitsProcessor",
+        "LogitNormalization",
         "LogitsProcessor",
         "LogitsProcessorList",
         "LogitsWarper",
         "MinLengthLogitsProcessor",
+        "MinNewTokensLengthLogitsProcessor",
         "NoBadWordsLogitsProcessor",
         "NoRepeatNGramLogitsProcessor",
         "PrefixConstrainedLogitsProcessor",
         "RepetitionPenaltyLogitsProcessor",
+        "SequenceBiasLogitsProcessor",
+        "SuppressTokensLogitsProcessor",
+        "SuppressTokensAtBeginLogitsProcessor",
         "TemperatureLogitsWarper",
         "TopKLogitsWarper",
         "TopPLogitsWarper",
         "TypicalLogitsWarper",
-        "EncoderNoRepeatNGramLogitsProcessor",
-        "ExponentialDecayLengthPenalty",
-        "LogitNormalization",
+        "UnbatchedClassifierFreeGuidanceLogitsProcessor",
+        "WhisperTimeStampLogitsProcessor",
     ]
     _import_structure["stopping_criteria"] = [
         "MaxNewTokensCriteria",
         "MaxLengthCriteria",
         "MaxTimeCriteria",
+        "EosTokenCriteria",
         "StoppingCriteria",
         "StoppingCriteriaList",
         "validate_stopping_criteria",
     ]
     _import_structure["utils"] = [
         "GenerationMixin",
-        "top_k_top_p_filtering",
         "GreedySearchEncoderDecoderOutput",
         "GreedySearchDecoderOnlyOutput",
         "SampleEncoderDecoderOutput",
@@ -84,6 +99,10 @@ else:
         "BeamSampleDecoderOnlyOutput",
         "ContrastiveSearchEncoderDecoderOutput",
         "ContrastiveSearchDecoderOnlyOutput",
+        "GenerateBeamDecoderOnlyOutput",
+        "GenerateBeamEncoderDecoderOutput",
+        "GenerateDecoderOnlyOutput",
+        "GenerateEncoderDecoderOutput",
     ]
 
 try:
@@ -95,6 +114,7 @@ else:
     _import_structure["tf_logits_process"] = [
         "TFForcedBOSTokenLogitsProcessor",
         "TFForcedEOSTokenLogitsProcessor",
+        "TFForceTokensLogitsProcessor",
         "TFLogitsProcessor",
         "TFLogitsProcessorList",
         "TFLogitsWarper",
@@ -102,16 +122,14 @@ else:
         "TFNoBadWordsLogitsProcessor",
         "TFNoRepeatNGramLogitsProcessor",
         "TFRepetitionPenaltyLogitsProcessor",
+        "TFSuppressTokensAtBeginLogitsProcessor",
+        "TFSuppressTokensLogitsProcessor",
         "TFTemperatureLogitsWarper",
         "TFTopKLogitsWarper",
         "TFTopPLogitsWarper",
-        "TFForceTokensLogitsProcessor",
-        "TFSuppressTokensAtBeginLogitsProcessor",
-        "TFSuppressTokensLogitsProcessor",
     ]
     _import_structure["tf_utils"] = [
         "TFGenerationMixin",
-        "tf_top_k_top_p_filtering",
         "TFGreedySearchDecoderOnlyOutput",
         "TFGreedySearchEncoderDecoderOutput",
         "TFSampleEncoderDecoderOutput",
@@ -133,13 +151,18 @@ else:
     _import_structure["flax_logits_process"] = [
         "FlaxForcedBOSTokenLogitsProcessor",
         "FlaxForcedEOSTokenLogitsProcessor",
+        "FlaxForceTokensLogitsProcessor",
         "FlaxLogitsProcessor",
         "FlaxLogitsProcessorList",
         "FlaxLogitsWarper",
         "FlaxMinLengthLogitsProcessor",
+        "FlaxSuppressTokensAtBeginLogitsProcessor",
+        "FlaxSuppressTokensLogitsProcessor",
         "FlaxTemperatureLogitsWarper",
         "FlaxTopKLogitsWarper",
         "FlaxTopPLogitsWarper",
+        "FlaxWhisperTimeStampLogitsProcessor",
+        "FlaxNoRepeatNGramLogitsProcessor",
     ]
     _import_structure["flax_utils"] = [
         "FlaxGenerationMixin",
@@ -149,7 +172,8 @@ else:
     ]
 
 if TYPE_CHECKING:
-    from .configuration_utils import GenerationConfig
+    from .configuration_utils import GenerationConfig, GenerationMode
+    from .streamers import TextIteratorStreamer, TextStreamer
 
     try:
         if not is_torch_available():
@@ -159,11 +183,18 @@ if TYPE_CHECKING:
     else:
         from .beam_constraints import Constraint, ConstraintListState, DisjunctiveConstraint, PhrasalConstraint
         from .beam_search import BeamHypotheses, BeamScorer, BeamSearchScorer, ConstrainedBeamSearchScorer
+        from .candidate_generator import AssistedCandidateGenerator, CandidateGenerator, PromptLookupCandidateGenerator
         from .logits_process import (
+            AlternatingCodebooksLogitsProcessor,
+            ClassifierFreeGuidanceLogitsProcessor,
             EncoderNoRepeatNGramLogitsProcessor,
+            EncoderRepetitionPenaltyLogitsProcessor,
+            EpsilonLogitsWarper,
+            EtaLogitsWarper,
             ExponentialDecayLengthPenalty,
             ForcedBOSTokenLogitsProcessor,
             ForcedEOSTokenLogitsProcessor,
+            ForceTokensLogitsProcessor,
             HammingDiversityLogitsProcessor,
             InfNanRemoveLogitsProcessor,
             LogitNormalization,
@@ -171,16 +202,23 @@ if TYPE_CHECKING:
             LogitsProcessorList,
             LogitsWarper,
             MinLengthLogitsProcessor,
+            MinNewTokensLengthLogitsProcessor,
             NoBadWordsLogitsProcessor,
             NoRepeatNGramLogitsProcessor,
             PrefixConstrainedLogitsProcessor,
             RepetitionPenaltyLogitsProcessor,
+            SequenceBiasLogitsProcessor,
+            SuppressTokensAtBeginLogitsProcessor,
+            SuppressTokensLogitsProcessor,
             TemperatureLogitsWarper,
             TopKLogitsWarper,
             TopPLogitsWarper,
             TypicalLogitsWarper,
+            UnbatchedClassifierFreeGuidanceLogitsProcessor,
+            WhisperTimeStampLogitsProcessor,
         )
         from .stopping_criteria import (
+            EosTokenCriteria,
             MaxLengthCriteria,
             MaxNewTokensCriteria,
             MaxTimeCriteria,
@@ -195,12 +233,15 @@ if TYPE_CHECKING:
             BeamSearchEncoderDecoderOutput,
             ContrastiveSearchDecoderOnlyOutput,
             ContrastiveSearchEncoderDecoderOutput,
+            GenerateBeamDecoderOnlyOutput,
+            GenerateBeamEncoderDecoderOutput,
+            GenerateDecoderOnlyOutput,
+            GenerateEncoderDecoderOutput,
             GenerationMixin,
             GreedySearchDecoderOnlyOutput,
             GreedySearchEncoderDecoderOutput,
             SampleDecoderOnlyOutput,
             SampleEncoderDecoderOutput,
-            top_k_top_p_filtering,
         )
 
     try:
@@ -238,7 +279,6 @@ if TYPE_CHECKING:
             TFGreedySearchEncoderDecoderOutput,
             TFSampleDecoderOnlyOutput,
             TFSampleEncoderDecoderOutput,
-            tf_top_k_top_p_filtering,
         )
 
     try:
@@ -250,13 +290,18 @@ if TYPE_CHECKING:
         from .flax_logits_process import (
             FlaxForcedBOSTokenLogitsProcessor,
             FlaxForcedEOSTokenLogitsProcessor,
+            FlaxForceTokensLogitsProcessor,
             FlaxLogitsProcessor,
             FlaxLogitsProcessorList,
             FlaxLogitsWarper,
             FlaxMinLengthLogitsProcessor,
+            FlaxNoRepeatNGramLogitsProcessor,
+            FlaxSuppressTokensAtBeginLogitsProcessor,
+            FlaxSuppressTokensLogitsProcessor,
             FlaxTemperatureLogitsWarper,
             FlaxTopKLogitsWarper,
             FlaxTopPLogitsWarper,
+            FlaxWhisperTimeStampLogitsProcessor,
         )
         from .flax_utils import FlaxBeamSearchOutput, FlaxGenerationMixin, FlaxGreedySearchOutput, FlaxSampleOutput
 else:

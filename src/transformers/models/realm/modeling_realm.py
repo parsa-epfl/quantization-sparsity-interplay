@@ -41,19 +41,9 @@ _EMBEDDER_CHECKPOINT_FOR_DOC = "google/realm-cc-news-pretrained-embedder"
 _ENCODER_CHECKPOINT_FOR_DOC = "google/realm-cc-news-pretrained-encoder"
 _SCORER_CHECKPOINT_FOR_DOC = "google/realm-cc-news-pretrained-scorer"
 _CONFIG_FOR_DOC = "RealmConfig"
-_TOKENIZER_FOR_DOC = "RealmTokenizer"
 
-REALM_PRETRAINED_MODEL_ARCHIVE_LIST = [
-    "google/realm-cc-news-pretrained-embedder",
-    "google/realm-cc-news-pretrained-encoder",
-    "google/realm-cc-news-pretrained-scorer",
-    "google/realm-cc-news-pretrained-openqa",
-    "google/realm-orqa-nq-openqa",
-    "google/realm-orqa-nq-reader",
-    "google/realm-orqa-wq-openqa",
-    "google/realm-orqa-wq-reader",
-    # See all REALM models at https://huggingface.co/models?filter=realm
-]
+
+from ..deprecated._archive_maps import REALM_PRETRAINED_MODEL_ARCHIVE_LIST  # noqa: F401, E402
 
 
 def load_tf_weights_in_realm(model, config, tf_checkpoint_path):
@@ -179,7 +169,9 @@ class RealmEmbeddings(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
         self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
-        self.register_buffer("position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)))
+        self.register_buffer(
+            "position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)), persistent=False
+        )
         self.register_buffer(
             "token_type_ids", torch.zeros(self.position_ids.size(), dtype=torch.long), persistent=False
         )
@@ -569,6 +561,13 @@ class RealmEncoder(nn.Module):
         all_self_attentions = () if output_attentions else None
         all_cross_attentions = () if output_attentions and self.config.add_cross_attention else None
 
+        if self.gradient_checkpointing and self.training:
+            if use_cache:
+                logger.warning_once(
+                    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                )
+                use_cache = False
+
         next_decoder_cache = () if use_cache else None
         for i, layer_module in enumerate(self.layer):
             if output_hidden_states:
@@ -578,26 +577,15 @@ class RealmEncoder(nn.Module):
             past_key_value = past_key_values[i] if past_key_values is not None else None
 
             if self.gradient_checkpointing and self.training:
-
-                if use_cache:
-                    logger.warning(
-                        "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
-                    )
-                    use_cache = False
-
-                def create_custom_forward(module):
-                    def custom_forward(*inputs):
-                        return module(*inputs, past_key_value, output_attentions)
-
-                    return custom_forward
-
-                layer_outputs = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(layer_module),
+                layer_outputs = self._gradient_checkpointing_func(
+                    layer_module.__call__,
                     hidden_states,
                     attention_mask,
                     layer_head_mask,
                     encoder_hidden_states,
                     encoder_attention_mask,
+                    past_key_value,
+                    output_attentions,
                 )
             else:
                 layer_outputs = layer_module(
@@ -726,7 +714,7 @@ class RealmReaderOutput(ModelOutput):
             The index of the retrieved span candidates in which the predicted answer is most likely.
         start_pos (`torch.IntTensor` of shape `()`):
             Predicted answer starting position in *RealmReader*'s inputs.
-        end_pos: (`torch.IntTensor` of shape `()`):
+        end_pos (`torch.IntTensor` of shape `()`):
             Predicted answer ending position in *RealmReader*'s inputs.
         hidden_states (`tuple(torch.FloatTensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
             Tuple of `torch.FloatTensor` (one for the output of the embeddings + one for the output of each layer) of
@@ -914,7 +902,7 @@ REALM_INPUTS_DOCSTRING = r"""
         input_ids (`torch.LongTensor` of shape `({0})`):
             Indices of input sequence tokens in the vocabulary.
 
-            Indices can be obtained using [`RealmTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
 
             [What are input IDs?](../glossary#input-ids)
@@ -968,7 +956,6 @@ class RealmPreTrainedModel(PreTrainedModel):
     config_class = RealmConfig
     load_tf_weights = load_tf_weights_in_realm
     base_model_prefix = "realm"
-    _keys_to_ignore_on_load_missing = [r"position_ids"]
 
     def _init_weights(self, module):
         """Initialize the weights"""
@@ -1062,6 +1049,7 @@ class RealmBertModel(RealmPreTrainedModel):
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
+            self.warn_if_padding_and_no_attention_mask(input_ids, attention_mask)
             input_shape = input_ids.size()
         elif inputs_embeds is not None:
             input_shape = inputs_embeds.size()[:-1]
@@ -1147,7 +1135,7 @@ class RealmBertModel(RealmPreTrainedModel):
     REALM_START_DOCSTRING,
 )
 class RealmEmbedder(RealmPreTrainedModel):
-    _keys_to_ignore_on_load_missing = ["cls.predictions.decoder.bias"]
+    _tied_weights_keys = ["cls.predictions.decoder.bias"]
 
     def __init__(self, config):
         super().__init__(config)
@@ -1182,10 +1170,10 @@ class RealmEmbedder(RealmPreTrainedModel):
         Example:
 
         ```python
-        >>> from transformers import RealmTokenizer, RealmEmbedder
+        >>> from transformers import AutoTokenizer, RealmEmbedder
         >>> import torch
 
-        >>> tokenizer = RealmTokenizer.from_pretrained("google/realm-cc-news-pretrained-embedder")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/realm-cc-news-pretrained-embedder")
         >>> model = RealmEmbedder.from_pretrained("google/realm-cc-news-pretrained-embedder")
 
         >>> inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
@@ -1266,7 +1254,7 @@ class RealmScorer(RealmPreTrainedModel):
         candidate_input_ids (`torch.LongTensor` of shape `(batch_size, num_candidates, sequence_length)`):
             Indices of candidate input sequence tokens in the vocabulary.
 
-            Indices can be obtained using [`RealmTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
 
             [What are input IDs?](../glossary#input-ids)
@@ -1296,9 +1284,9 @@ class RealmScorer(RealmPreTrainedModel):
 
         ```python
         >>> import torch
-        >>> from transformers import RealmTokenizer, RealmScorer
+        >>> from transformers import AutoTokenizer, RealmScorer
 
-        >>> tokenizer = RealmTokenizer.from_pretrained("google/realm-cc-news-pretrained-scorer")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/realm-cc-news-pretrained-scorer")
         >>> model = RealmScorer.from_pretrained("google/realm-cc-news-pretrained-scorer", num_candidates=2)
 
         >>> # batch_size = 2, num_candidates = 2
@@ -1377,7 +1365,7 @@ class RealmScorer(RealmPreTrainedModel):
     REALM_START_DOCSTRING,
 )
 class RealmKnowledgeAugEncoder(RealmPreTrainedModel):
-    _keys_to_ignore_on_load_missing = ["cls.predictions.decoder"]
+    _tied_weights_keys = ["cls.predictions.decoder"]
 
     def __init__(self, config):
         super().__init__(config)
@@ -1439,9 +1427,9 @@ class RealmKnowledgeAugEncoder(RealmPreTrainedModel):
 
         ```python
         >>> import torch
-        >>> from transformers import RealmTokenizer, RealmKnowledgeAugEncoder
+        >>> from transformers import AutoTokenizer, RealmKnowledgeAugEncoder
 
-        >>> tokenizer = RealmTokenizer.from_pretrained("google/realm-cc-news-pretrained-encoder")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/realm-cc-news-pretrained-encoder")
         >>> model = RealmKnowledgeAugEncoder.from_pretrained(
         ...     "google/realm-cc-news-pretrained-encoder", num_candidates=2
         ... )
@@ -1527,9 +1515,6 @@ class RealmKnowledgeAugEncoder(RealmPreTrainedModel):
 
 @add_start_docstrings("The reader of REALM.", REALM_START_DOCSTRING)
 class RealmReader(RealmPreTrainedModel):
-
-    _keys_to_ignore_on_load_unexpected = [r"pooler", "cls"]
-
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
@@ -1701,7 +1686,7 @@ REALM_FOR_OPEN_QA_DOCSTRING = r"""
         input_ids (`torch.LongTensor` of shape `({0})`):
             Indices of input sequence tokens in the vocabulary.
 
-            Indices can be obtained using [`RealmTokenizer`]. See [`PreTrainedTokenizer.encode`] and
+            Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
 
             [What are input IDs?](../glossary#input-ids)
@@ -1783,10 +1768,10 @@ class RealmForOpenQA(RealmPreTrainedModel):
 
         ```python
         >>> import torch
-        >>> from transformers import RealmForOpenQA, RealmRetriever, RealmTokenizer
+        >>> from transformers import RealmForOpenQA, RealmRetriever, AutoTokenizer
 
         >>> retriever = RealmRetriever.from_pretrained("google/realm-orqa-nq-openqa")
-        >>> tokenizer = RealmTokenizer.from_pretrained("google/realm-orqa-nq-openqa")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/realm-orqa-nq-openqa")
         >>> model = RealmForOpenQA.from_pretrained("google/realm-orqa-nq-openqa", retriever=retriever)
 
         >>> question = "Who is the pioneer in modern computer science?"

@@ -25,6 +25,8 @@ logger = logging.get_logger(__name__)
 if is_tf_available():
     import tensorflow as tf
 
+    from .modeling_tf_utils import keras
+
 
 @dataclass
 class TFTrainingArguments(TrainingArguments):
@@ -66,7 +68,7 @@ class TFTrainingArguments(TrainingArguments):
             The batch size per GPU/TPU core/CPU for training.
         per_device_eval_batch_size (`int`, *optional*, defaults to 8):
             The batch size per GPU/TPU core/CPU for evaluation.
-        gradient_accumulation_steps: (`int`, *optional*, defaults to 1):
+        gradient_accumulation_steps (`int`, *optional*, defaults to 1):
             Number of updates steps to accumulate the gradients for, before performing a backward/update pass.
 
             <Tip warning={true}>
@@ -92,6 +94,8 @@ class TFTrainingArguments(TrainingArguments):
             Total number of training epochs to perform.
         max_steps (`int`, *optional*, defaults to -1):
             If set to a positive number, the total number of training steps to perform. Overrides `num_train_epochs`.
+            For a finite dataset, training is reiterated through the dataset (if all data is exhausted) until
+            `max_steps` is reached.
         warmup_ratio (`float`, *optional*, defaults to 0.0):
             Ratio of total training steps used for a linear warmup from 0 to `learning_rate`.
         warmup_steps (`int`, *optional*, defaults to 0):
@@ -193,7 +197,7 @@ class TFTrainingArguments(TrainingArguments):
 
         # Set to float16 at first
         if self.fp16:
-            tf.keras.mixed_precision.set_global_policy("mixed_float16")
+            keras.mixed_precision.set_global_policy("mixed_float16")
 
         if self.no_cuda:
             strategy = tf.distribute.OneDeviceStrategy(device="/cpu:0")
@@ -214,7 +218,7 @@ class TFTrainingArguments(TrainingArguments):
             if tpu:
                 # Set to bfloat16 in case of TPU
                 if self.fp16:
-                    tf.keras.mixed_precision.set_global_policy("mixed_bfloat16")
+                    keras.mixed_precision.set_global_policy("mixed_bfloat16")
 
                 tf.config.experimental_connect_to_cluster(tpu)
                 tf.tpu.experimental.initialize_tpu_system(tpu)
@@ -248,6 +252,13 @@ class TFTrainingArguments(TrainingArguments):
         """
         requires_backends(self, ["tf"])
         return self._setup_strategy.num_replicas_in_sync
+
+    @property
+    def should_log(self):
+        """
+        Whether or not the current process should produce log.
+        """
+        return False  # TF Logging is handled by Keras not the Trainer
 
     @property
     def train_batch_size(self) -> int:

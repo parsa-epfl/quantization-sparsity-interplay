@@ -1,7 +1,7 @@
 compute_node=$1
 blocksize=64
 mantbits=7
-sparsity_frac=0.6
+sparsity_frac=0.65
 num_format=bfp
 sparsity_num_format=fp32
 rearrange=False
@@ -17,8 +17,8 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
-      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
+      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.65-unstr/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/
+      mkdir /parsadata1/lisa/experiments/bert-sparse-squad-0.65-unstr/$benchmark/quant_scheme2/$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/
    fi
 
    if [ $compute_node == "runai" ]
@@ -72,7 +72,7 @@ bit_range="[]"
    fi
 cd examples/pytorch/question-answering
 python3 run_qa.py \
-    --model_name_or_path /parsadata1/lisa/experiments/bert-sparse-corpus-0.6-unstr/quant_scheme2/fp32/fp32_[2]:[4]/\
+    --model_name_or_path /parsadata1/lisa/experiments/bert-sparse-corpus-0.65-unstr-from13k/quant_scheme2/fp32/fp32_[2]:[4]/checkpoint-20500 \
     --dataset_name squad \
     --do_train \
     --do_eval \
@@ -82,4 +82,4 @@ python3 run_qa.py \
     --num_train_epochs 3 \
     --max_seq_length 384 \
     --doc_stride 128 \
-    --output_dir /parsadata1/lisa/experiments/bert-sparse-squad-0.6-unstr-longer-fn/$benchmark/quant_scheme2/$filename  \
+    --output_dir /parsadata1/lisa/experiments/bert-sparse-squad-0.65-unstr/$benchmark/quant_scheme2/$filename  \

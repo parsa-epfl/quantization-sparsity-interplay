@@ -20,12 +20,8 @@ from ...utils import logging
 
 logger = logging.get_logger(__name__)
 
-SPEECH_TO_TEXT_2_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "facebook/s2t-wav2vec2-large-en-de": (
-        "https://huggingface.co/facebook/s2t-wav2vec2-large-en-de/resolve/main/config.json"
-    ),
-    # See all Speech2Text models at https://huggingface.co/models?filter=speech2text2
-}
+
+from ..deprecated._archive_maps import SPEECH_TO_TEXT_2_PRETRAINED_CONFIG_ARCHIVE_MAP  # noqa: F401, E402
 
 
 class Speech2Text2Config(PretrainedConfig):
@@ -68,8 +64,6 @@ class Speech2Text2Config(PretrainedConfig):
             for more details.
         use_cache (`bool`, *optional*, defaults to `True`):
             Whether or not the model should return the last key/values attentions (not used by all models).
-        max_source_positions (`int`, *optional*, defaults to 6000):
-            The maximum sequence length of log-mel filter-bank features that this model might ever be used with.
         max_target_positions (`int`, *optional*, defaults to 1024):
             The maximum sequence length that this model might ever be used with. Typically set this to something large
             just in case (e.g., 512 or 1024 or 2048).
@@ -88,6 +82,7 @@ class Speech2Text2Config(PretrainedConfig):
     >>> # Accessing the model configuration
     >>> configuration = model.config
     ```"""
+
     model_type = "speech_to_text_2"
     keys_to_ignore_at_inference = ["past_key_values"]
     attribute_map = {"num_attention_heads": "decoder_attention_heads", "hidden_size": "d_model"}
@@ -111,9 +106,8 @@ class Speech2Text2Config(PretrainedConfig):
         pad_token_id=1,
         bos_token_id=0,
         eos_token_id=2,
-        max_source_positions=6000,
         max_target_positions=1024,
-        **kwargs
+        **kwargs,
     ):
         self.vocab_size = vocab_size
         self.d_model = d_model
@@ -129,7 +123,6 @@ class Speech2Text2Config(PretrainedConfig):
         self.use_cache = use_cache
         self.num_hidden_layers = decoder_layers
         self.scale_embedding = scale_embedding  # scale factor will be sqrt(d_model) if True
-        self.max_source_positions = max_source_positions
         self.max_target_positions = max_target_positions
 
         super().__init__(
