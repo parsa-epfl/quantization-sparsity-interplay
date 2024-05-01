@@ -11,12 +11,13 @@ import numpy as np
 import pickle
 from .bfp_ops import fp32_sparsity_hierarchial_n_m, fp32_sparsity_unstructured
 
-import sys
-sys.path.append("/parsadata1/lisa/microxcaling/")
-print(sys.path)
+# import sys
+# sys.path.append("/parsadata1/lisa/microxcaling/")
+# print(sys.path)
 
 import mx
-from mx import Linear, apply_mx_specs, finalize_mx_specs
+from mx import Linear
+from .specs import apply_mx_specs, finalize_mx_specs
 
 
 class MXLinear(Linear):

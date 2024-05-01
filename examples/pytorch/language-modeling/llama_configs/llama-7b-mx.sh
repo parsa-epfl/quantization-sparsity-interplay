@@ -69,6 +69,8 @@ bit_range="[]"
    sparsity_mode: 'structured'  # Don't need to change, it doesn't change the sparsity pattern if checkpoint is already sparsified
    mx_w_elem_format: 'fp8_e4m3' # weights MXFP8 quantization MXFP8, check another options in transformers_hbfp_sparsity/src/transformers/bfp/formats.py
    mx_a_elem_format: 'fp8_e4m3' # activations MXFP8 quantization, check another options in transformers_hbfp_sparsity/src/transformers/bfp/formats.py
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
       cd ../../../
       pip install -e .
