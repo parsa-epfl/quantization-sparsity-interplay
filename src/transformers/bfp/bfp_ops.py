@@ -210,8 +210,11 @@ def fp32_sparsity_hierarchial_n_m(t, device, N=[], M=[]):
 # Sparsity scheme 4: BFP version
 def bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N=[], M=[], sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     assert ((len(N) > 0) and (len(M) > 0) and (len(N) == len(M)))
-    bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
-    sparse_bfp_t = sparsity_hierarchial_n_m(bfp_t, device, N, M)
+    sparse_t = sparsity_hierarchial_n_m(t, device, N, M)
+    sparse_bfp_t, _ = _no_sparsity_float_to_bfp(sparse_t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+
+    # bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+    # sparse_bfp_t = sparsity_hierarchial_n_m(bfp_t, device, N, M)
     return sparse_bfp_t
 
 # Sparsity scheme 5: N:M sparsity at the block level

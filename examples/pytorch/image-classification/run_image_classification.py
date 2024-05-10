@@ -226,6 +226,7 @@ def main():
             data_args.dataset_config_name,
             cache_dir=model_args.cache_dir,
             task="image-classification",
+            ignore_verifications=True,
             use_auth_token=True if model_args.use_auth_token else None,
         )
     else:
