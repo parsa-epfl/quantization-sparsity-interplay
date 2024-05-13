@@ -173,8 +173,11 @@ def fp32_sparsity_unstructured(t, device, sparsity_frac=0):
 # Sparsity scheme 3: BFP version
 def bfp_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac=0, sgd_update=False, unconstrained=False, bit_range=[], exp_given=None):
     assert (sparsity_frac > 0)
-    bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
-    sparse_bfp_t = sparsity_unstructured(bfp_t, device, sparsity_frac)
+    
+    sparse_t = sparsity_unstructured(t, device, sparsity_frac)
+    sparse_bfp_t, _ = _no_sparsity_float_to_bfp(sparse_t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+    # bfp_t, _ = _no_sparsity_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update, unconstrained, bit_range)
+    # sparse_bfp_t = sparsity_unstructured(bfp_t, device, sparsity_frac)
     return sparse_bfp_t
 
 # Sparsity scheme 4: Generic any level hierarchial element wise N:M sparsity for BFP/FP32
@@ -260,8 +263,8 @@ def _float_to_bfp(t, mant_bits, epsilon, rounding_mode, device, sgd_update=False
     else:
         # return block_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac, sgd_update, unconstrained, bit_range, exp_given)
         # return block_sparsity_one_each_row(t, mant_bits, epsilon, rounding_mode, device, cols, sgd_update, unconstrained, bit_range, exp_given)
-        # return bfp_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac, sgd_update, unconstrained, bit_range, exp_given)
-        return bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
+        return bfp_sparsity_unstructured(t, mant_bits, epsilon, rounding_mode, device, sparsity_frac, sgd_update, unconstrained, bit_range, exp_given)
+        # return bfp_sparsity_hierarchial_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
         # return inter_intra_bfp_sparsity_n_m(t, mant_bits, epsilon, rounding_mode, device, N, M, sgd_update, unconstrained, bit_range, exp_given)
 
 
@@ -286,8 +289,8 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_
         if sparsity == False:
             return t
         else:
-            # return fp32_sparsity_unstructured(t, device, sparsity_frac)
-            return fp32_sparsity_hierarchial_n_m(t, device, N, M)
+            return fp32_sparsity_unstructured(t, device, sparsity_frac)
+            # return fp32_sparsity_hierarchial_n_m(t, device, N, M)
     else:
         if sgd_update:
             mant_bits = weight_mant_bits
