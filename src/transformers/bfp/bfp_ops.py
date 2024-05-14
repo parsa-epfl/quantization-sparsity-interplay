@@ -75,6 +75,7 @@ def get_exponent(t, epsilon):
 
 def _convert_blocked_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device):
     # Get exponent of each block
+    print(f"T shape: {t.shape}")
     exp = get_exponent(t, epsilon)
     
     # The interval between two consecutive numbers with that exponent value
@@ -88,7 +89,7 @@ def _convert_blocked_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device):
     rounded *=  interval
 
     # To ensure that there is no underflow or overflow
-    return torch.min(torch.max(rounded, -max_v), max_v), exp
+    return torch.min(torch.max(rounded, -max_v), max_v)
 
 def _no_sparsity_float_to_bfp(t, block_size, mant_bits, epsilon, rounding_mode, device):
     orig_shape = t.shape
@@ -117,7 +118,7 @@ def _unstructured_sparsity(t, device, sparsity_frac=0):
     return sparse_t.contiguous().view(orig_shape)
 
 def _structured_N_M_sparsity(t, device, N=0, M=0):
-    assert ((N > 0) and (M > 0) and (N == M))
+    assert ((N > 0) and (M > 0) and (N <= M))
 
     orig_shape = t.shape
     padded_shape = list(orig_shape)
@@ -746,21 +747,29 @@ def test_sparse():
     epsilon = 0
     rounding_mode = 'determ'
     num_format='bfp'
-    matrix_h, matrix_w = 8, 8
+    matrix_h, matrix_w = 12, 13
     tile_size = 15
     mant_bits = 3
-
+    sparse_num_format = 'bfp'
+    sparsity_mode = 'structured'
+    N = [1]
+    M = [4]
+    sparse_frac = 0.5
+    first='q'
 
     t = torch.randn(matrix_h, matrix_w, device=device, dtype=dtype)
 
-    print(t)
-    b = float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=64,
+    # print(t)
+    b = float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=32,
                        num_format='bfp', weight_mant_bits=15, in_sparsity=False, w_sparsity=True, grad_sparsity=False, rearrange=False, 
-                       sparsity_frac=0.1, N=[2], M=[4], sparsity_num_format='fp32', identifier='w',
+                       sparsity_frac=sparse_frac, N=N, M=M, sparsity_num_format=sparse_num_format, identifier='w', sparsity_mode=sparsity_mode, first=first,
                        sgd_update=False, mant_bits_pow=None)
     
-    print(t)
-    print(b)
+    f = 1 - torch.count_nonzero(b)/torch.numel(b)
+    print(f"Sparsity frac = {f}")
+
+    # print(t)
+    # print(b)
     
 
 if __name__ == '__main__':
