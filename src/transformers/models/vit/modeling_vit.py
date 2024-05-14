@@ -167,8 +167,8 @@ class ViTPatchEmbeddings(nn.Module):
 
         ### bfp layers
         ### TODO: Check this
-        #self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
-        self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
+        self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
+        # self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = False) -> torch.Tensor:
         batch_size, num_channels, height, width = pixel_values.shape
