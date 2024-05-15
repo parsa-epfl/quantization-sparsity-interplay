@@ -507,12 +507,12 @@ class BFPConv2d(torch.nn.Conv2d):
                             self.padding, self.dilation, self.groups)
 
         elif self.num_format == 'bfp':
-            conv = self.conv_op(input, self.weight, None, self.stride,
+            conv = self.conv_op(input, self.weight, self.bias, self.stride,
                                 self.padding, self.dilation, self.groups)
             if self.bias is not None:
                 #print(f'shape conv: {conv.shape}')
                 #print(f'bias conv: {self.bias.shape}')
-                return conv + self.bias
+                return conv
             else:
                 return conv
 
