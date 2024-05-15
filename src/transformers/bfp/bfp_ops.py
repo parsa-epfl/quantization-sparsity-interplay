@@ -75,7 +75,6 @@ def get_exponent(t, epsilon):
 
 def _convert_blocked_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device):
     # Get exponent of each block
-    print(f"T shape: {t.shape}")
     exp = get_exponent(t, epsilon)
     
     # The interval between two consecutive numbers with that exponent value
@@ -451,6 +450,10 @@ def unpack_bfp_args(kwargs):
                 ('sparsity_frac', 0),
                 ('unconstrained', False),
                 ('bit_range', []),
+                ('mx_w_elem_format', ''),
+                ('mx_a_elem_format', ''),
+                ('bfloat', 16),
+                ('scale_bits', 8),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:

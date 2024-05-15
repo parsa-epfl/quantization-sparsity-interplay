@@ -40,7 +40,7 @@ from .configuration_vit import ViTConfig
 ### BFP imports
 from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
 from ...bfp import bfp_util
-
+from ...bfp.mx_layers import MXLinear, MXMatmul
 
 logger = logging.get_logger(__name__)
 
@@ -167,8 +167,8 @@ class ViTPatchEmbeddings(nn.Module):
 
         ### bfp layers
         ### TODO: Check this
-        self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
-        # self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
+        # self.projection = BFPConv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size, **self.bfp_args)
+        self.projection = nn.Conv2d(num_channels, hidden_size, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, pixel_values: torch.Tensor, interpolate_pos_encoding: bool = False) -> torch.Tensor:
         batch_size, num_channels, height, width = pixel_values.shape
@@ -202,9 +202,16 @@ class ViTSelfAttention(nn.Module):
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
         ### bfp layers
-        self.query = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
-        self.key = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
-        self.value = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+        # self.query = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+        # self.key = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+        # self.value = BFPLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, **self.bfp_args)
+
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.query = MXLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, mx_specs=self.mx_specs, **self.sparsity_args)
+        self.key = MXLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, mx_specs=self.mx_specs, **self.sparsity_args)
+        self.value = MXLinear(config.hidden_size, self.all_head_size, bias=config.qkv_bias, mx_specs=self.mx_specs, **self.sparsity_args)
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
@@ -223,8 +230,9 @@ class ViTSelfAttention(nn.Module):
         query_layer = self.transpose_for_scores(mixed_query_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        bfp_matmul = F_matmul_bfp(**self.bfp_args)
-        attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        # bfp_matmul = F_matmul_bfp(**self.bfp_args)
+        # attention_scores = bfp_matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = MXMatmul(query_layer, key_layer.transpose(-1, -2), mx_specs=self.mx_specs, **self.sparsity_args)
 
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
 
@@ -239,8 +247,9 @@ class ViTSelfAttention(nn.Module):
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
 
-        context_layer = bfp_matmul(attention_probs, value_layer)
-
+        # context_layer = bfp_matmul(attention_probs, value_layer)
+        context_layer = MXMatmul(attention_probs, value_layer, mx_specs=self.mx_specs, **self.sparsity_args)
+        
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(new_context_layer_shape)
@@ -262,7 +271,12 @@ class ViTSelfOutput(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
 
         ### bfp layers
-        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        # self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.dense = MXLinear(config.hidden_size, config.hidden_size, mx_specs=self.mx_specs, **self.sparsity_args)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
@@ -319,7 +333,13 @@ class ViTIntermediate(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
 
         ### bfp layers
-        self.dense = BFPLinear(config.hidden_size, config.intermediate_size, **self.bfp_args)
+        # self.dense = BFPLinear(config.hidden_size, config.intermediate_size, **self.bfp_args)
+        
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.dense = MXLinear(config.hidden_size, config.intermediate_size, mx_specs=self.mx_specs, **self.sparsity_args)
+
         if isinstance(config.hidden_act, str):
             self.intermediate_act_fn = ACT2FN[config.hidden_act]
         else:
@@ -340,7 +360,12 @@ class ViTOutput(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
 
         ### bfp layers
-        self.dense = BFPLinear(config.intermediate_size, config.hidden_size, **self.bfp_args)
+        # self.dense = BFPLinear(config.intermediate_size, config.hidden_size, **self.bfp_args)
+        
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.dense = MXLinear(config.intermediate_size, config.hidden_size, mx_specs=self.mx_specs, **self.sparsity_args)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor) -> torch.Tensor:
@@ -633,7 +658,12 @@ class ViTPooler(nn.Module):
         self.bfp_args = bfp_util.get_bfp_args()
 
         ### bfp layers
-        self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        # self.dense = BFPLinear(config.hidden_size, config.hidden_size, **self.bfp_args)
+        
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.dense = MXLinear(config.hidden_size, config.hidden_size, mx_specs=self.mx_specs, **self.sparsity_args)
         self.activation = nn.Tanh()
 
     def forward(self, hidden_states):
@@ -791,8 +821,12 @@ class ViTForImageClassification(ViTPreTrainedModel):
 
         # Classifier head
         ### bfp layers
-        self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args) if config.num_labels > 0 else nn.Identity()
+        # self.classifier = BFPLinear(config.hidden_size, config.num_labels, **self.bfp_args) if config.num_labels > 0 else nn.Identity()
 
+        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
+        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
+
+        self.classifier = MXLinear(config.hidden_size, config.num_labels, mx_specs=self.mx_specs, **self.sparsity_args) if config.num_labels > 0 else nn.Identity()
         # Initialize weights and apply final processing
         self.post_init()
 
