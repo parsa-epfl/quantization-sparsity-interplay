@@ -173,10 +173,11 @@ def _quantize(t, num_format, bfp_block_size, mant_bits, weight_mant_bits, sgd_up
 def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25, bfp_block_size=0,
                        num_format='', weight_mant_bits=0, in_sparsity=False, w_sparsity=False, grad_sparsity=False, rearrange=False, 
                        sparsity_frac=0, N=[0], M=[0], sparsity_num_format='bfp', identifier='', first='s', sparsity_mode='unstructured',
-                       sgd_update=False, unconstrained=False, bit_range=[], mant_bits_pow=None):
+                       sgd_update=False, unconstrained=False, bit_range=[], mant_bits_pow=None,
+                       mx_w_elem_format='', mx_a_elem_format='', scale_bits=0, bfloat=0):
 
     assert (num_format == 'bfp')
-    assert (((sparsity_num_format == 'bfp') and (bfp_block_size > 0)) or (sparsity_num_format == 'fp32'))
+    assert (((sparsity_num_format == 'bfp') and (bfp_block_size > 0)) or (sparsity_num_format == 'fp32') or (sparsity_num_format == 'int'))
 
     if in_sparsity == True and identifier == 'in':
         sparsity = True
