@@ -1,20 +1,16 @@
 #!/bin/bash
 
 blocksize=64
-mantbits=5
+mantbits=7
 sparsity_frac=0.5
 sparsity_num_format=fp32
-# benchmark=imagenet-1k
-benchmark=cifar100
+benchmark=imagenet-1k
 rearrange=False
 sparsify=True
-# model='google/vit-base-patch16-224'
-# model='./imagenet_results/bfp_5_64/[2]_[4]_3/checkpoint-30027'
-# model='./cifar100_results/fp32_5_64/[2]_[4]_5/checkpoint-1660'
-model='google/vit-base-patch16-224-in21k'
-# model='./cifar100_results/fp32_5_64/0.5_6/checkpoint-1992'
-# model='Ahmed9275/Vit-Cifar100'
-epochs=10
+model='google/vit-base-patch16-224'
+epochs=3
+first='s'
+sparsity_mode='unstructured'
 
 N="[2]"
 M="[4]"
@@ -24,7 +20,6 @@ bit_range="[2,3]"
 
 # filename=$sparsity_num_format\_$mantbits\_$blocksize/$N\_$M\_$epochs
 # logfile=$benchmark\_log\_$sparsity_num_format\_$mantbits\_$blocksize\_$N\_$M\_$epochs.txt
-
 
 filename=$sparsity_num_format\_$mantbits\_$blocksize/$sparsity_frac\_$epochs
 logfile=$benchmark\_log\_$sparsity_num_format\_$mantbits\_$blocksize\_$sparsity_frac\_$epochs.txt
@@ -47,6 +42,8 @@ echo -e "hbfp:
    N: $N
    M: $M
    unconstrained: $unconstrained
+   first: $first
+   sparsity_mode: $sparsity_mode
    bit_range: $bit_range
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
 
