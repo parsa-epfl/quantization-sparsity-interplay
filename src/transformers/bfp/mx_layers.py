@@ -12,7 +12,7 @@ import pickle
 from .bfp_ops import _unstructured_sparsity, _structured_N_M_sparsity
 
 import mx
-from mx import Linear
+from mx import Linear, Conv2d
 from mx import matmul as mx_matmul
 from .specs import apply_mx_specs, finalize_mx_specs
 
@@ -40,6 +40,48 @@ class MXLinear(Linear):
         self.sparsity_mode = sparsity_mode
         self.sparsity_frac = sparsity_frac
         self.N = N 
+        self.M = M
+        self.sparsity_init = False
+
+    def forward(self, inputs):
+        if self.sparsity:
+            if not self.sparsity_init:
+                if self.sparsity_mode == "structured":
+                    self.weight = torch.nn.Parameter(_structured_N_M_sparsity(self.weight, self.device, self.N[0], self.M[0]))
+                else:
+                    self.weight = torch.nn.Parameter(_unstructured_sparsity(self.weight, self.device, self.sparsity_frac))
+                self.sparsity_init = True
+        return super().forward(inputs)
+
+class MXConv2d(Conv2d):
+    def __init__(self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+        mx_specs=None,
+        name=None,
+        sparsitu=False,
+        device=None,
+        sparsity_mode="structured",
+        sparsity_frac=0.0,
+        N=[],
+        M=[],
+    ):
+        mx_specs = apply_mx_specs(mx_specs)
+        mx_specs = finalize_mx_specs(mx_specs)
+        super().__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, mx_specs, name)
+        assert(sparsity_mode in ["structured", "unstructured"])
+
+        self.sparsity = sparsity
+        self.device = device
+        self.sparsity_mode = sparsity_mode
+        self.sparsity_frac = sparsity_frac
+        self.N = N
         self.M = M
         self.sparsity_init = False
 

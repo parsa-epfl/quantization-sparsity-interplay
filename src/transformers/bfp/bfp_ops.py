@@ -36,7 +36,7 @@ import itertools as it
 import logging
 import unittest
 import numpy as np
-from .int_ops import int_quantize
+from .int_ops import Quantizer
 
 class rounding_modes:
     """
@@ -159,8 +159,12 @@ def _quantize(t, num_format, bfp_block_size, mant_bits, weight_mant_bits, sgd_up
     elif num_format == 'int':
         if sgd_update:
             mant_bits = weight_mant_bits
-        quant_t = int_quantize(t, mant_bits, device, identifier)
-        assert(quant_t.shape == t.shape)
+        weight = True if identifier == 'w' else False
+        quantizer = Quantizer()
+        quantizer.confiigure(bits=mant_bits)
+        quantizer.find_params(x, weight=weight)
+        quant_t = quantizer.quantize(t)
+        assert(t.shape == quant_t.shape)
         return quant_t
     else:
         raise ValueError(f'Unknown quantization format: {num_format} given as argument')

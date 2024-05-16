@@ -1,32 +1,46 @@
 #!/bin/bash
 
-blocksize=32
-mantbits=8
-sparsity_frac=0.5
-sparsity_num_format=int
-benchmark=imagenet-1k
-rearrange=False
-sparsify=True
-model='/scratch/new_ayan/transformers_hbfp_sparsity/examples/pytorch/image-classification/imagenet-1k_results/fp32_5_64/0.5_2'
-epochs=3
-first='s'
+sparsity_num_format=bfp
+mantbits=7
+sparsify=False
 sparsity_mode='unstructured'
 mx_w_elem_format='fp8_e4m3'
 mx_a_elem_format='fp8_e4m3'
+benchmark=imagenet-1k
+
+if [ $sparsity_num_format == bfp ]; then
+	blocksize=64
+else
+	blocksize=32
+fi
+
+if [ $sparsify == True ]; then
+	if [ $sparsity_mode == 'unstructured' ]; then
+		model="/scratch/new_ayan/checkpoints/$benchmark/fp32_unstructured"
+		suffix="${sparsity_frac}"
+	else
+		model="/scratch/new_ayan/checkpoints/$benchmark/fp32_structured"
+		suffix="${N}_${M}"
+	fi
+else
+	model="/scratch/new_ayan/checkpoints/$benchmark/fp32_dense"
+	suffix="$epochs"
+fi
+
+rearrange=False
+first='s'
 bfloat=16
 scale_bits=8
 
+sparsity_frac=0.5
 N="[2]"
 M="[4]"
 
 unconstrained=False
 bit_range="[2,3]"
 
-# filename=$sparsity_num_format\_$mantbits\_$blocksize/$N\_$M\_$epochs
-# logfile=$benchmark\_log\_$sparsity_num_format\_$mantbits\_$blocksize\_$N\_$M\_$epochs.txt
-
-filename=eval_$sparsity_num_format\_$mantbits\_$blocksize/$sparsity_frac\_$epochs
-logfile=eval_$benchmark\_log\_$sparsity_num_format\_$mantbits\_$blocksize\_$sparsity_frac\_$epochs.txt
+filename=eval_$sparsity_num_format\_$mantbits\_$blocksize/$suffix
+logfile=eval_$benchmark\_log\_$sparsity_num_format\_$mantbits\_$blocksize\_$suffix.txt
 
 rm ../../../src/transformers/bfp/bfp_config.yaml
 echo -e "hbfp:
@@ -68,7 +82,6 @@ python3 run_image_classification.py  \
    --remove_unused_columns False  \
    --do_eval  \
    --learning_rate 5e-5  \
-   --num_train_epochs $epochs  \
    --per_device_train_batch_size 8  \
    --per_device_eval_batch_size 8  \
    --logging_strategy steps  \
@@ -84,4 +97,3 @@ python3 run_image_classification.py  \
    --adam_epsilon 1e-08  \
    --lr_scheduler_type linear \
    --optim BFPAdam | tee $logfile
-   # --do_train
