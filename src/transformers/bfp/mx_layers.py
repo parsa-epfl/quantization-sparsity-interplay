@@ -56,10 +56,10 @@ class MXLinear(Linear):
 def MXMatmul(in1, in2, mx_specs=None, sparsity=False, sparsity_mode="unstructured", device=None, N=[], M=[], sparsity_frac=0):
     assert(sparsity_mode in ["structured", "unstructured"])
     if sparsity:
-        if sparsity_mode == "unstructured":
-            in2 = _structured_N_M_sparsity(in2, device, N[0], M[0])
+        if sparsity_mode == "structured":
+            in2 = torch.transpose(_structured_N_M_sparsity(torch.transpose(in2, -1, -2), device, N[0], M[0]), -1, -2)
         else:
-            in2 = _unstructured_sparsity(in2, device, sparsity_frac)
+            in2 = torch.transpose(_unstructured_sparsity(torch.transpose(in2, -1, -2), device, sparsity_frac), -1, -2)
     return mx_matmul(in1, in2, mx_specs=mx_specs)
         
 
