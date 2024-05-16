@@ -457,6 +457,16 @@ def rearrange_mats(matA, matB, device):
     matB = matB.reshape(orig_shape_B)
     return matA, matB
 
+def int_quantize(x, bits):
+    maxq = 2**bits-1
+    max_val = torch.max(x)
+    min_val = torch.min(x)
+    scale = (max_val-min_val)/maxq
+    zero = (-min_val)/scale
+    
+    q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
+    return scale*(q-zero)
+
 def MxM_pre_processing(x, w, transpose, **bfp_args):
     device = bfp_args['device']
     rearrange = bfp_args['rearrange']
@@ -472,8 +482,8 @@ def MxM_pre_processing(x, w, transpose, **bfp_args):
             new_x, new_w = rearrange_mats(x, torch.transpose(w, -1, -2), device)
             return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'))
         else:
-            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
-            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), w)
+            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            return (int_quantize(x, 8), int_quantize(w, 8))
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
