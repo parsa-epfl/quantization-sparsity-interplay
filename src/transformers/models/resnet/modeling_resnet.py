@@ -38,6 +38,8 @@ from ...utils import (
 )
 from .configuration_resnet import ResNetConfig
 
+from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
+from ...bfp import bfp_util
 
 logger = logging.get_logger(__name__)
 
@@ -64,9 +66,13 @@ class ResNetConvLayer(nn.Module):
         self, in_channels: int, out_channels: int, kernel_size: int = 3, stride: int = 1, activation: str = "relu"
     ):
         super().__init__()
-        self.convolution = nn.Conv2d(
-            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size // 2, bias=False
-        )
+        self.bfp_args = bfp_util.get_bfp_args()
+
+        self.convolution = BFPConv2d(
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size//2, bias=False, **self.bfp_args)
+        # self.convolution = nn.Conv2d(
+        #     in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size // 2, bias=False
+        # )
         self.normalization = nn.BatchNorm2d(out_channels)
         self.activation = ACT2FN[activation] if activation is not None else nn.Identity()
 
@@ -109,7 +115,9 @@ class ResNetShortCut(nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int, stride: int = 2):
         super().__init__()
-        self.convolution = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
+        self.bfp_args = bfp_util.get_bfp_args()
+        self.convolution = BFPConv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False, **self.bfp_args)
+        # self.convolution = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
         self.normalization = nn.BatchNorm2d(out_channels)
 
     def forward(self, input: Tensor) -> Tensor:
@@ -360,9 +368,11 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
         self.num_labels = config.num_labels
         self.resnet = ResNetModel(config)
         # classification head
+        self.bfp_args = bfp_util.get_bfp_args()
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(config.hidden_sizes[-1], config.num_labels) if config.num_labels > 0 else nn.Identity(),
+            BFPLinear(config.hidden_sizes[-1], config.num_labels) if config.num_labels > 0 else nn.Identity()
+            # nn.Linear(config.hidden_sizes[-1], config.num_labels) if config.num_labels > 0 else nn.Identity(),
         )
         # initialize weights and apply final processing
         self.post_init()

@@ -161,8 +161,8 @@ def _quantize(t, num_format, bfp_block_size, mant_bits, weight_mant_bits, sgd_up
             mant_bits = weight_mant_bits
         weight = True if identifier == 'w' else False
         quantizer = Quantizer()
-        quantizer.confiigure(bits=mant_bits)
-        quantizer.find_params(x, weight=weight)
+        quantizer.configure(bits=mant_bits)
+        quantizer.find_params(t, weight=weight)
         quant_t = quantizer.quantize(t)
         assert(t.shape == quant_t.shape)
         return quant_t

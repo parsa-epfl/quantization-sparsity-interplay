@@ -1,12 +1,14 @@
 #!/bin/bash
 
-sparsity_num_format=bfp
-mantbits=3
-sparsify=False
-sparsity_mode='structured'
+sparsity_num_format=fp32
+mantbits=8
+sparsify=True
+sparsity_mode='unstructured'
 mx_w_elem_format='fp8_e4m3'
 mx_a_elem_format='fp8_e4m3'
 benchmark=imagenet-1k
+model='microsoft/resnet-50'
+epochs=3
 
 rearrange=False
 first='s'
@@ -29,14 +31,11 @@ fi
 
 if [ $sparsify == True ]; then
 	if [ $sparsity_mode == 'unstructured' ]; then
-		model="/scratch/new_ayan/checkpoints/$benchmark/fp32_unstructured"
-		suffix="${sparsity_frac}"
+		suffix="${sparsity_frac}_epochs"
 	else
-		model="/scratch/new_ayan/checkpoints/$benchmark/fp32_structured"
-		suffix="${N}_${M}"
+		suffix="${N}_${M}_epochs"
 	fi
 else
-	model="/scratch/new_ayan/checkpoints/$benchmark/fp32_dense"
 	suffix="$epochs"
 fi
 
@@ -81,6 +80,7 @@ python3 run_image_classification.py  \
    --use_auth_token=True \
    --overwrite_output_dir \
    --remove_unused_columns False  \
+   --do_train \
    --do_eval  \
    --learning_rate 5e-5  \
    --per_device_train_batch_size 8  \
