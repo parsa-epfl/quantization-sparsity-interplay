@@ -65,7 +65,7 @@ class MXConv2d(Conv2d):
         bias=True,
         mx_specs=None,
         name=None,
-        sparsitu=False,
+        sparsity=False,
         device=None,
         sparsity_mode="structured",
         sparsity_frac=0.0,
