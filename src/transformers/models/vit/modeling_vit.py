@@ -18,6 +18,7 @@
 import collections.abc
 import math
 from typing import Dict, List, Optional, Set, Tuple, Union
+import os, re
 
 import torch
 import torch.utils.checkpoint
@@ -870,6 +871,22 @@ class ViTForImageClassification(ViTPreTrainedModel):
         sequence_output = outputs[0]
 
         logits = self.classifier(sequence_output[:, 0, :])
+       
+
+        
+        prefix = f"{self.bfp_args['sparsity_num_format']}_{self.bfp_args['mant_bits']}_{self.bfp_args['bfp_block_size']}_{self.bfp_args['w_sparsity']}_{self.bfp_args['sparsity_mode']}"
+        pattern = re.compile(rf'^{prefix}_(\d+)')
+        max_idx = 0
+        for filename in os.listdir("./"):
+            match = pattern.match(filename)
+            if match:
+                idx = int(match.group(1))
+                if idx > max_idx:
+                    max_idx = idx
+        file_idx = max_idx + 1
+        filename = f"{prefix}_{file_idx}.pt"
+        torch.save(logits, filename)
+        
 
         loss = None
         if labels is not None:
