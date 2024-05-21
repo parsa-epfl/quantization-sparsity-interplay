@@ -41,6 +41,7 @@ from transformers import (
     TrainingArguments,
     default_data_collator,
     set_seed,
+    AutoModel
 )
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
@@ -327,7 +328,8 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
-    model = AutoModelForQuestionAnswering.from_pretrained(
+    # lisa: changed to llama
+    model = AutoModel.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,

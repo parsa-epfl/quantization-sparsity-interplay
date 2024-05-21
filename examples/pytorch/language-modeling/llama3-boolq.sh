@@ -1,9 +1,9 @@
 compute_node=$1
 blocksize=64
-mantbits=5
+mantbits=7
 sparsity_frac=0.5
 num_format=bfp
-sparsity_num_format=fp32
+sparsity_num_format=bfp
 rearrange=False
 
 N="[2]"
@@ -17,7 +17,7 @@ bit_range="[]"
       filename=$sparsity_num_format/fp32\_$N:$M
    else
       filename=$sparsity_num_format\_block\_size\_$blocksize/hbfp\_$bit_range/$benchmark\_bfp$mantbits\_sparse\_$blocksize
-      mkdir /parsadata1/lisa/experiments/llama-fp-0.5/
+      mkdir /scratch/kostenok/experiments/llama3-finetune/
    fi
 
    if [ $compute_node == "runai" ]
@@ -58,7 +58,7 @@ bit_range="[]"
    bfp_tile_size: 8
    bfp_block_size: $blocksize 
    in_sparsity: False
-   w_sparsity: True
+   w_sparsity: False
    grad_sparsity: False
    rearrange: $rearrange
    sparsity_frac: $sparsity_frac
@@ -71,22 +71,27 @@ bit_range="[]"
       pip install -e .
    fi
 cd examples/pytorch/language-modeling
-python3 run_llama.py \
-    --model_name_or_path /parsadata1/lisa/Llama-2-7b-hf-checkpoints/ \
-    --tokenizer_name /parsadata1/lisa/Llama-2-7b-hf-checkpoints \
-    --dataset_name wikitext \
-    --dataset_config_name wikitext-2-raw-v1 \
-    --per_device_train_batch_size 2 \
+CUDA_VISIBLE_DEVICES=0 python3 llama3-one-shot-eval.py \
+    --model_name_or_path /scratch/kostenok/llama3-hf-checkpoint \
+    --tokenizer_name /scratch/kostenok/llama3-hf-checkpoint \
+    --dataset_name google/boolq \
+    --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --do_train \
     --do_eval \
-    --block_size 1024 \
-    --remove_unused_columns False \
-    --output_dir /parsadata1/lisa/experiments/llama-fp-0.5/ \
+    --max_steps 60 \
+    --save_steps 60 \
+    --logging_steps 10 \
+    --remove_unused_columns True \
+    --output_dir /scratch/kostenok/experiments/llama3-finetune/ \
     --overwrite_output_dir \
-    --learning_rate 1e-04 \
+    --learning_rate 5e-05 \
     --adam_beta1 0.9  \
     --adam_beta2 0.999  \
     --adam_epsilon 1e-08  \
+    --gradient_accumulation_steps 1 \
+    --max_grad_norm 0.3 \
+    --weight_decay 0.001 \
+    --warmup_ratio 0.03 \
     --lr_scheduler_type linear \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
+    --optim paged_adamw_32bit \

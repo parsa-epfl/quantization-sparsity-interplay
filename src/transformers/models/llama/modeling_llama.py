@@ -64,7 +64,10 @@ _CONFIG_FOR_DOC = "LlamaConfig"
 ### BFP imports
 from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
 ### MX imports
-#from ...bfp.mx_layers import MXLinear
+import sys
+sys.path.append('/scratch/kostenok/microxcaling')
+
+from ...bfp.mx_layers import MXLinear
 from ...bfp import bfp_util
 ### int8 and LLM.int8() imports
 from bitsandbytes.nn import Linear8bitLt
@@ -230,17 +233,17 @@ class LlamaMLP(nn.Module):
         # self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         # self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
 
-        # self.gate_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
-        # self.up_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
-        # self.down_proj = BFPLinear(self.intermediate_size, self.hidden_size, bias=False, **self.bfp_args)
+        self.gate_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
+        self.up_proj = BFPLinear(self.hidden_size, self.intermediate_size, bias=False, **self.bfp_args)
+        self.down_proj = BFPLinear(self.intermediate_size, self.hidden_size, bias=False, **self.bfp_args)
         # self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
         # self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
         # self.gate_proj = MXLinear(self.hidden_size, self.intermediate_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         # self.up_proj = MXLinear(self.hidden_size, self.intermediate_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         # self.down_proj = MXLinear(self.intermediate_size, self.hidden_size, bias=False, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
-        self.gate_proj = Linear8bitLt(self.hidden_size, self.intermediate_size, bias=False, threshold=6.0)
-        self.up_proj = Linear8bitLt(self.hidden_size, self.intermediate_size, bias=False, threshold=6.0)
-        self.down_proj = Linear8bitLt(self.intermediate_size, self.hidden_size, bias=False, threshold=6.0)
+        # self.gate_proj = Linear8bitLt(self.hidden_size, self.intermediate_size, bias=False, threshold=0.0) # set to 0.0 for int8, 6.0 for LLM.int8()
+        # self.up_proj = Linear8bitLt(self.hidden_size, self.intermediate_size, bias=False, threshold=0.0)
+        # self.down_proj = Linear8bitLt(self.intermediate_size, self.hidden_size, bias=False, threshold=0.0)
         self.act_fn = ACT2FN[config.hidden_act]
 
     def forward(self, x):
@@ -315,20 +318,20 @@ class LlamaAttention(nn.Module):
         # self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
         # self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
         # self.o_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=config.attention_bias)
-        # self.q_proj = BFPLinear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
-        # self.k_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
-        # self.v_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
-        # self.o_proj = BFPLinear(self.hidden_size, self.hidden_size, bias=config.attention_bias, **self.bfp_args)
+        self.q_proj = BFPLinear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        self.k_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        self.v_proj = BFPLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, **self.bfp_args)
+        self.o_proj = BFPLinear(self.hidden_size, self.hidden_size, bias=config.attention_bias, **self.bfp_args)
         # self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
         # self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
         # self.q_proj = MXLinear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         # self.k_proj = MXLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         # self.v_proj = MXLinear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         # self.o_proj = MXLinear(self.hidden_size, self.hidden_size, bias=config.attention_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
-        self.q_proj = Linear8bitLt(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, threshold=6.0)
-        self.k_proj = Linear8bitLt(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, threshold=6.0)
-        self.v_proj = Linear8bitLt(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, threshold=6.0)
-        self.o_proj = Linear8bitLt(self.hidden_size, self.hidden_size, bias=config.attention_bias, threshold=6.0)
+        # self.q_proj = Linear8bitLt(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias, threshold=0.0) # set to 0.0 for int8, 6.0 for LLM.int8()
+        # self.k_proj = Linear8bitLt(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, threshold=0.0)
+        # self.v_proj = Linear8bitLt(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias, threshold=0.0)
+        # self.o_proj = Linear8bitLt(self.hidden_size, self.hidden_size, bias=config.attention_bias, threshold=0.0)
         self._init_rope()
 
     def _init_rope(self):
@@ -1175,7 +1178,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
         super().__init__(config)
         self.model = LlamaModel(config)
         self.vocab_size = config.vocab_size
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False, dtype=torch.float32)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1260,6 +1263,10 @@ class LlamaForCausalLM(LlamaPreTrainedModel):
         )
 
         hidden_states = outputs[0]
+        # LISA
+        hidden_states = hidden_states.float()
+        # print(hidden_states.dtype)
+        # print(self.lm_head.weight.dtype)
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
             logits = [F.linear(hidden_states, lm_head_slices[i]) for i in range(self.config.pretraining_tp)]

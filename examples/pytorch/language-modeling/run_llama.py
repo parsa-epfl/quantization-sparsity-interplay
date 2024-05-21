@@ -56,6 +56,8 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
+from peft import LoraConfig
+from trl import SFTTrainer
 
 from accelerate import Accelerator
 import tensor_parallel as tp
@@ -213,7 +215,7 @@ class DataTrainingArguments:
 
 
 @torch.no_grad()
-def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
+def llama_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     """
     Perplexity computation adapted from SparseGPT framework
     """
@@ -225,6 +227,7 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     use_cache = model.config.use_cache
     model.config.use_cache = False
     layers = model.model.layers
+    model.lm_head = model.lm_head.float()
 
     model.model.embed_tokens = model.model.embed_tokens.to(dev)
     layers[0] = layers[0].to(dev)
@@ -250,6 +253,7 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
 
     layers[0] = Catcher(layers[0])
     for i in range(nsamples):
+    # for i in range(1):
         batch = testenc[:, (i * model.seqlen) : ((i + 1) * model.seqlen)].to(dev)
         try:
             model(batch)
@@ -270,6 +274,9 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         layer = layers[i].to(dev)
 
         for j in range(nsamples):
+            if i == 31:
+                inps[i] = inps[i].float()
+                layer = layer.float()
             outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
         layers[i] = layer.cpu()
         del layer
@@ -283,9 +290,11 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     testenc = testenc.to(dev)
     nlls = []
     for i in range(nsamples):
+    # for i in range(1):
         hidden_states = inps[i].unsqueeze(0)
         if model.model.norm is not None:
             hidden_states = model.model.norm(hidden_states)
+        hidden_states = hidden_states.float()
         lm_logits = model.lm_head(hidden_states)
         shift_logits = lm_logits[:, :-1, :].contiguous()
         shift_labels = testenc[:, (i * model.seqlen) : ((i + 1) * model.seqlen)][:, 1:]
@@ -295,9 +304,15 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         )
         neg_log_likelihood = loss.float() * model.seqlen
         nlls.append(neg_log_likelihood)
+    print(nlls)
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    print(f"Perplexity: {ppl.item():3f}")
-
+    print(f"Perplexity: {ppl.item():3f}") 
+    if os.path.exists("/scratch/kostenok/experiments/hbfp_ppl.npy"):
+        prev_stats = np.load("/scratch/kostenok/experiments/hbfp_ppl.npy")
+        prev_stats = np.append(prev_stats, ppl.item())
+    else:
+        prev_stats = np.array([ppl.item()])
+    np.save("/scratch/kostenok/experiments/hbfp_ppl.npy", prev_stats)   
     model.config.use_cache = use_cache
 
 
@@ -391,13 +406,9 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name)
     if model_args.model_name_or_path:
-        # model = tp.tensor_parallel(OPTForCausalLM.from_pretrained(
-        #     model_args.model_name_or_path,
-        #     torch_dtype=torch.bfloat16,
-        # ))
         model = LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
-            torch_dtype=torch.float16,
+            torch_dtype=torch.float16
         )
         # model.load_state_dict(torch.load("/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model_no_lm_head.pth"), strict=False)
         model.seqlen = model.config.max_position_embeddings
@@ -452,12 +463,12 @@ def main():
 
     if data_args.block_size is None:
         block_size = tokenizer.model_max_length
-        if block_size > 512:
+        if block_size > 2048:
             logger.warning(
                 f"The tokenizer picked seems to have a very large `model_max_length` ({tokenizer.model_max_length}). "
                 "Picking 1024 instead. You can change that default value by passing --block_size xxx."
             )
-            block_size = 512
+            block_size = 2048
     else:
         if data_args.block_size > tokenizer.model_max_length:
             logger.warning(
@@ -506,19 +517,56 @@ def main():
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
             train_dataset = train_dataset.select(range(max_train_samples)) 
-
+    # Lisa: train on different samples
+    # train_dataset = train_dataset.select(range(720, 920))
     # Validation data
     testdata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
     testenc = tokenizer("\n\n".join(testdata['text']), return_tensors='pt')
-
+    if tokenizer.pad_token is None:
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        model.resize_token_embeddings(len(tokenizer))
     def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
                 # Depending on the model and config, logits may contain extra tensors,
                 # like past_key_values, but logits always come first
                 logits = logits[0]
-            return logits.argmax(dim=-1)
-    
+            return logits.argmax(dim=-1) 
     # Initialize our Trainer
+    # peft_config = LoraConfig(
+    #     lora_alpha = 16,
+    #     lora_dropout=0.1,
+    #     r=64,
+    #     bias="none",
+    #     task_type="CAUSAL_LM",
+    # )
+    # training_arguments = TrainingArguments(
+    #     output_dir="/scratch/kostenok/experiments/lora-llama3-finetune/",
+    #     num_train_epochs=1,
+    #     per_device_train_batch_size=1,
+    #     gradient_accumulation_steps=1,
+    #     optim="paged_adamw_32bit",
+    #     save_steps=50,
+    #     logging_steps=5,
+    #     learning_rate=1e-5,
+    #     weight_decay=0.001,
+    #     fp16=True,
+    #     bf16=False,
+    #     max_grad_norm=0.03,
+    #     max_steps=50,
+    #     warmup_ratio=0.03,
+    #     group_by_length=True,
+    #     lr_scheduler_type="linear"
+    # )
+    # trainer = SFTTrainer(
+    #     model=model,
+    #     train_dataset=train_dataset,
+    #     peft_config=peft_config,
+    #     dataset_text_field="text",
+    #     max_seq_length=None,
+    #     tokenizer=tokenizer,
+    #     args=training_arguments,
+    #     packing=False,
+    # )
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -535,15 +583,17 @@ def main():
 
     # Training
     if training_args.do_train:
+        with torch.no_grad():
+            torch.cuda.empty_cache()
         checkpoint = None
         if training_args.resume_from_checkpoint is not None:
             checkpoint = training_args.resume_from_checkpoint
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        # trainer.save_model()  # Saves the tokenizer too for easy upload
+        trainer.save_model()  # Saves the tokenizer too for easy upload
         # with tp.save_tensor_parallel(model):
-        #    torch.save(model.state_dict(), "/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model.pth")
+        #     torch.save(model.state_dict(), "/scratch/kostenok/experiments/llama-finetune/full_model.pth")
 
         metrics = train_result.metrics
 
@@ -552,13 +602,13 @@ def main():
         )
         metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
-        # trainer.log_metrics("train", metrics)
-        # trainer.save_metrics("train", metrics)
-        # trainer.save_state()
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)
+        trainer.save_state()
 
     # Evaluation
     if training_args.do_eval:
-        opt_eval(model, testenc, "cuda", dataset="wikidata", log_wandb=False)
+        llama_eval(model, testenc, "cuda", dataset="wikidata", log_wandb=False)
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)

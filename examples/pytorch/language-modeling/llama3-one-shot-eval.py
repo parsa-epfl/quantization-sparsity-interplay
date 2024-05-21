@@ -44,7 +44,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     HfArgumentParser,
-    OPTForCausalLM, 
+    LlamaForCausalLM, 
     Trainer,
     TrainingArguments,
     default_data_collator,
@@ -56,9 +56,12 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
+from peft import LoraConfig
+from trl import SFTTrainer
 
 from accelerate import Accelerator
 import tensor_parallel as tp
+import lm_eval
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")
@@ -213,110 +216,36 @@ class DataTrainingArguments:
 
 
 @torch.no_grad()
-def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
-    """
-    Perplexity computation adapted from SparseGPT framework
-    """
-    print('Evaluating ...')
-    # model = model.to(dev)
-    testenc = testenc.input_ids
-    nsamples = testenc.numel() // model.seqlen
-    print(len(testenc))
-    print("numel ", testenc.numel(), " model seqlen ", model.seqlen)
+def eval_zero_shot(model_name, model, tokenizer, task_list=["boolq"], 
+        num_fewshot=0, use_accelerate=False, add_special_tokens=False):
+    from lm_eval import tasks, evaluator 
+    def pattern_match(patterns, source_list):
+        task_names = set()
+        for pattern in patterns:
+            for matching in fnmatch.filter(source_list, pattern):
+                task_names.add(matching)
+        return list(task_names)
+    # task_names = pattern_match(task_list, tasks.ALL_TASKS)
+    model_args = f"pretrained=/scratch/kostenok/llama3-hf-checkpoint,cache_dir=./llm_weights,dtype=float16"
+    limit = None 
+    if "70b" in model_name or "65b" in model_name:
+        limit = 2000
+    if use_accelerate:
+        model_args = f"pretrained=/scratch/kostenok/llama3-hf-checkpoint,cache_dir=./llm_weights,use_accelerate=True"
+    results = lm_eval.simple_evaluate(
+        model="hf",
+        model_args=model_args,
+        tasks="boolq",
+        num_fewshot=num_fewshot,
+        batch_size=4,
+        device="cuda:0",
+        limit=limit,
+        check_integrity=False
+    )["results"]
+    print(results)
+    
 
-    use_cache = model.config.use_cache
-    model.config.use_cache = False
-    layers = model.model.decoder.layers
-
-    model.model.decoder.embed_tokens = model.model.decoder.embed_tokens.to(dev)
-    model.model.decoder.embed_positions = model.model.decoder.embed_positions.to(dev)
-    if hasattr(model.model.decoder, 'project_out') and model.model.decoder.project_out:
-        model.model.decoder.project_out = model.model.decoder.project_out.to(dev) 
-    if hasattr(model.model.decoder, 'project_in') and model.model.decoder.project_in:
-        model.model.decoder.project_in = model.model.decoder.project_in.to(dev) 
-    layers[0] = layers[0].to(dev)
-
-    dtype = next(iter(model.parameters())).dtype
-    inps = torch.zeros(
-        (nsamples, model.seqlen, model.config.hidden_size), dtype=dtype, device=dev
-    )
-    cache = {'i': 0, 'attention_mask': None}
-
-    class Catcher(nn.Module):
-        def __init__(self, module):
-            super().__init__()
-            self.module = module
-        def forward(self, inp, **kwargs):
-            inps[cache['i']] = inp
-            cache['i'] += 1
-            cache['attention_mask'] = kwargs['attention_mask']
-            raise ValueError
-    layers[0] = Catcher(layers[0])
-    for i in range(nsamples):
-        batch = testenc[:, (i * model.seqlen):((i + 1) * model.seqlen)].to(dev)
-        try:
-            model(batch)
-        except ValueError:
-            pass
-    layers[0] = layers[0].module
-
-    layers[0] = layers[0].cpu()
-    model.model.decoder.embed_tokens = model.model.decoder.embed_tokens.cpu()
-    model.model.decoder.embed_positions = model.model.decoder.embed_positions.cpu()
-    if hasattr(model.model.decoder, 'project_out') and model.model.decoder.project_out:
-        model.model.decoder.project_out = model.model.decoder.project_out.cpu()
-    if hasattr(model.model.decoder, 'project_in') and model.model.decoder.project_in:
-        model.model.decoder.project_in = model.model.decoder.project_in.cpu()
-    torch.cuda.empty_cache()
-
-    outs = torch.zeros_like(inps)
-    attention_mask = cache['attention_mask']
-
-    for i in range(len(layers)):
-        print(i)
-        layer = layers[i].to(dev)
-
-        for j in range(nsamples):
-            outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
-        layers[i] = layer.cpu()
-        del layer
-        torch.cuda.empty_cache()
-        inps, outs = outs, inps
-
-    if model.model.decoder.final_layer_norm is not None:
-        model.model.decoder.final_layer_norm = model.model.decoder.final_layer_norm.to(dev)
-    if model.model.decoder.project_out is not None:
-        model.model.decoder.project_out = model.model.decoder.project_out.to(dev)
-    model.lm_head = model.lm_head.to(dev)
-
-    testenc = testenc.to(dev)
-    nlls = []
-    print(nsamples)
-    for i in range(nsamples):
-        hidden_states = inps[i].unsqueeze(0)
-        if model.model.decoder.final_layer_norm is not None:
-            hidden_states = model.model.decoder.final_layer_norm(hidden_states)
-        if model.model.decoder.project_out is not None:
-            hidden_states = model.model.decoder.project_out(hidden_states)
-        lm_logits = model.lm_head(hidden_states)
-        shift_logits = lm_logits[:, :-1, :].contiguous()
-        shift_labels = testenc[
-            :, (i * model.seqlen):((i + 1) * model.seqlen)
-        ][:, 1:]
-        loss_fct = nn.CrossEntropyLoss()
-        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-        neg_log_likelihood = loss.float() * model.seqlen
-        nlls.append(neg_log_likelihood)
-    ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    print(f"Perplexity: {ppl.item():3f}")
-    # if os.path.exists("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy"):
-    #     prev_stats = np.load("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy")
-    #     prev_stats = np.append(prev_stats, ppl.item())
-    # else:
-    #     prev_stats = np.array([ppl.item()])
-    # np.save("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy", prev_stats)
-    if log_wandb:
-         wandb.log({f'{dataset}/perplexity': ppl.item()})
+    return results 
 
 
 def main():
@@ -385,27 +314,6 @@ def main():
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
         # Downloading and loading a dataset from the hub.
-    raw_datasets = load_dataset(
-        data_args.dataset_name,
-        data_args.dataset_config_name,
-        cache_dir=model_args.cache_dir,
-        use_auth_token=True if model_args.use_auth_token else None,
-    )
-    if "validation" not in raw_datasets.keys():
-        raw_datasets["validation"] = load_dataset(
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            split=f"train[:{data_args.validation_split_percentage}%]",
-            cache_dir=model_args.cache_dir,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
-        raw_datasets["train"] = load_dataset(
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            split=f"train[{data_args.validation_split_percentage}%:]",
-            cache_dir=model_args.cache_dir,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name)
     if model_args.model_name_or_path:
@@ -413,9 +321,9 @@ def main():
         #     model_args.model_name_or_path,
         #     torch_dtype=torch.bfloat16,
         # ))
-        model = OPTForCausalLM.from_pretrained(
+        model = LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float16
         )
         # model.load_state_dict(torch.load("/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model_no_lm_head.pth"), strict=False)
         model.seqlen = model.config.max_position_embeddings
@@ -430,153 +338,10 @@ def main():
     print('.................... model .........................')
     print(model)
 
-    # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
-    # on a small vocab and want a smaller embedding size, remove this test.
-    # embedding_size = model.get_input_embeddings().weight.shape[0]
-    # if len(tokenizer) > embedding_size:
-    #     model.resize_token_embeddings(len(tokenizer))
-
-    # Preprocessing the datasets.
-    # First we tokenize all the texts.
-    if training_args.do_train:
-        column_names = raw_datasets["train"].column_names
-    else:
-        column_names = raw_datasets["validation"].column_names
-    text_column_name = "text" if "text" in column_names else column_names[0]
-
-    # since this will be pickled to avoid _LazyModule error in Hasher force logger loading before tokenize_function
-    tok_logger = transformers.utils.logging.get_logger("transformers.tokenization_utils_base")
-
-    def tokenize_function(examples):
-        with CaptureLogger(tok_logger) as cl:
-            output = tokenizer(examples[text_column_name])
-        # clm input could be much much longer than block_size
-        if "Token indices sequence length is longer than the" in cl.out:
-            tok_logger.warning(
-                "^^^^^^^^^^^^^^^^ Please ignore the warning above - this long input will be chunked into smaller bits"
-                " before being passed to the model."
-            )
-        return output
-
-    with training_args.main_process_first(desc="dataset map tokenization"):
-        tokenized_datasets = raw_datasets.map(
-            tokenize_function,
-            batched=True,
-            num_proc=data_args.preprocessing_num_workers,
-            remove_columns=column_names,
-            load_from_cache_file=not data_args.overwrite_cache,
-            desc="Running tokenizer on dataset",
-        )
-
-    if data_args.block_size is None:
-        block_size = tokenizer.model_max_length
-        if block_size > 512:
-            logger.warning(
-                f"The tokenizer picked seems to have a very large `model_max_length` ({tokenizer.model_max_length}). "
-                "Picking 1024 instead. You can change that default value by passing --block_size xxx."
-            )
-            block_size = 512
-    else:
-        if data_args.block_size > tokenizer.model_max_length:
-            logger.warning(
-                f"The block_size passed ({data_args.block_size}) is larger than the maximum length for the model"
-                f"({tokenizer.model_max_length}). Using block_size={tokenizer.model_max_length}."
-            )
-        block_size = min(data_args.block_size, tokenizer.model_max_length)
-
-    # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
-    def group_texts(examples):
-        # Concatenate all texts.
-        concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
-        total_length = len(concatenated_examples[list(examples.keys())[0]])
-        # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
-        # customize this part to your needs.
-        if total_length >= block_size:
-            total_length = (total_length // block_size) * block_size
-        # Split by chunks of max_len.
-        result = {
-            k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
-            for k, t in concatenated_examples.items()
-        }
-        result["labels"] = result["input_ids"].copy()
-        return result
-
-    # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a remainder
-    # for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value might be slower
-    # to preprocess.
-    #
-    # To speed up this part, we use multiprocessing. See the documentation of the map method for more information:
-    # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.map
-
-    with training_args.main_process_first(desc="grouping texts together"):
-        lm_datasets = tokenized_datasets.map(
-            group_texts,
-            batched=True,
-            num_proc=data_args.preprocessing_num_workers,
-            load_from_cache_file=not data_args.overwrite_cache,
-            desc=f"Grouping texts in chunks of {block_size}",
-        )
-
-    if training_args.do_train:
-        if "train" not in tokenized_datasets:
-            raise ValueError("--do_train requires a train dataset")
-        train_dataset = lm_datasets["train"]
-        if data_args.max_train_samples is not None:
-            max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = train_dataset.select(range(max_train_samples)) 
-
-    # Validation data
-    testdata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
-    testenc = tokenizer("\n\n".join(testdata['text']), return_tensors='pt')
-
-    def preprocess_logits_for_metrics(logits, labels):
-            if isinstance(logits, tuple):
-                # Depending on the model and config, logits may contain extra tensors,
-                # like past_key_values, but logits always come first
-                logits = logits[0]
-            return logits.argmax(dim=-1)
-    
-    # Initialize our Trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=None,
-        tokenizer=tokenizer,
-        # Data collator will default to DataCollatorWithPadding, so we change it.
-        data_collator=default_data_collator,
-        compute_metrics=None,
-        preprocess_logits_for_metrics=preprocess_logits_for_metrics
-        if training_args.do_eval and not is_torch_tpu_available()
-        else None,
-    )
-
-    # Training
-    if training_args.do_train:
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            checkpoint = last_checkpoint
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()  # Saves the tokenizer too for easy upload
-        # with tp.save_tensor_parallel(model):
-        #    torch.save(model.state_dict(), "/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model.pth")
-
-        metrics = train_result.metrics
-
-        max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
-        )
-        metrics["train_samples"] = min(max_train_samples, len(train_dataset))
-
-        trainer.log_metrics("train", metrics)
-        trainer.save_metrics("train", metrics)
-        trainer.save_state()
 
     # Evaluation
     if training_args.do_eval:
-        opt_eval(model, testenc, "cuda", dataset="wikidata", log_wandb=False)
+        res = eval_zero_shot("llama3", model, tokenizer)
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)

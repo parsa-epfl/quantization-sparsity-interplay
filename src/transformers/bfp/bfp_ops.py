@@ -596,15 +596,14 @@ def MxM_pre_processing(x, w, transpose, **bfp_args):
             new_x, new_w = rearrange_mats(x, torch.transpose(w, -1, -2), device)
             return (float_to_bfp_blocked(new_x, **bfp_args, identifier='in'), float_to_bfp_blocked(torch.transpose(new_w, -1, -2), **bfp_args, identifier='w'))
         else:
-            # return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
-            # return (int_quantize(x, 8), int_quantize(w, 8))
-            quantizer = Quantizer()
-            quantizer.configure(bits=8)
-            quantizer.find_params(x, weight=False)
-            q_x = quantizer.quantize(x)
-            quantizer.find_params(w, weight=True)
-            q_w = quantizer.quantize(w)
-            return (q_x, q_w)
+            return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
+            # quantizer = Quantizer()
+            # quantizer.configure(bits=8)
+            # quantizer.find_params(x, weight=False)
+            # q_x = quantizer.quantize(x)
+            # quantizer.find_params(w, weight=True)
+            # q_w = quantizer.quantize(w)
+            # return (q_x, q_w)
 
 def float_to_bfp_batched(t, mant_bits, epsilon, rounding_mode, device, bfp_tile_size=25,
                          num_format='', weight_mant_bits=''):
