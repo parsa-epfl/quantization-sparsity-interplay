@@ -56,12 +56,6 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
-from peft import LoraConfig
-from trl import SFTTrainer
-
-from accelerate import Accelerator
-import tensor_parallel as tp
-
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")
 
@@ -72,10 +66,10 @@ logger = logging.getLogger(__name__)
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-GMP = True
-SPARSITY = 0.5
+# GMP = True
+# SPARSITY = 0.5
 
-accelerator = Accelerator()
+# accelerator = Accelerator()
 
 @dataclass
 class ModelArguments:
@@ -217,7 +211,7 @@ class DataTrainingArguments:
 @torch.no_grad()
 def llama_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     """
-    Perplexity computation adapted from SparseGPT framework
+    Perplexity computation adapted from SparseGPT framework https://github.com/IST-DASLab/sparsegpt
     """
     print("Evaluating ...")
 
@@ -306,13 +300,7 @@ def llama_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         nlls.append(neg_log_likelihood)
     print(nlls)
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    print(f"Perplexity: {ppl.item():3f}") 
-    if os.path.exists("/scratch/kostenok/experiments/hbfp_ppl.npy"):
-        prev_stats = np.load("/scratch/kostenok/experiments/hbfp_ppl.npy")
-        prev_stats = np.append(prev_stats, ppl.item())
-    else:
-        prev_stats = np.array([ppl.item()])
-    np.save("/scratch/kostenok/experiments/hbfp_ppl.npy", prev_stats)   
+    print(f"Perplexity: {ppl.item():3f}")   
     model.config.use_cache = use_cache
 
 
@@ -531,42 +519,7 @@ def main():
                 # like past_key_values, but logits always come first
                 logits = logits[0]
             return logits.argmax(dim=-1) 
-    # Initialize our Trainer
-    # peft_config = LoraConfig(
-    #     lora_alpha = 16,
-    #     lora_dropout=0.1,
-    #     r=64,
-    #     bias="none",
-    #     task_type="CAUSAL_LM",
-    # )
-    # training_arguments = TrainingArguments(
-    #     output_dir="/scratch/kostenok/experiments/lora-llama3-finetune/",
-    #     num_train_epochs=1,
-    #     per_device_train_batch_size=1,
-    #     gradient_accumulation_steps=1,
-    #     optim="paged_adamw_32bit",
-    #     save_steps=50,
-    #     logging_steps=5,
-    #     learning_rate=1e-5,
-    #     weight_decay=0.001,
-    #     fp16=True,
-    #     bf16=False,
-    #     max_grad_norm=0.03,
-    #     max_steps=50,
-    #     warmup_ratio=0.03,
-    #     group_by_length=True,
-    #     lr_scheduler_type="linear"
-    # )
-    # trainer = SFTTrainer(
-    #     model=model,
-    #     train_dataset=train_dataset,
-    #     peft_config=peft_config,
-    #     dataset_text_field="text",
-    #     max_seq_length=None,
-    #     tokenizer=tokenizer,
-    #     args=training_arguments,
-    #     packing=False,
-    # )
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -592,8 +545,6 @@ def main():
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()  # Saves the tokenizer too for easy upload
-        # with tp.save_tensor_parallel(model):
-        #     torch.save(model.state_dict(), "/scratch/kostenok/experiments/llama-finetune/full_model.pth")
 
         metrics = train_result.metrics
 

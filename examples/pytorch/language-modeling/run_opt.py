@@ -70,10 +70,10 @@ logger = logging.getLogger(__name__)
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-GMP = True
-SPARSITY = 0.5
-
-accelerator = Accelerator()
+# GMP = True
+# SPARSITY = 0.5
+torch.manual_seed(42)
+# accelerator = Accelerator()
 
 @dataclass
 class ModelArguments:
@@ -215,7 +215,7 @@ class DataTrainingArguments:
 @torch.no_grad()
 def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     """
-    Perplexity computation adapted from SparseGPT framework
+    Perplexity computation adapted from SparseGPT framework https://github.com/IST-DASLab/sparsegpt
     """
     print('Evaluating ...')
     # model = model.to(dev)
@@ -309,12 +309,6 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         nlls.append(neg_log_likelihood)
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
     print(f"Perplexity: {ppl.item():3f}")
-    # if os.path.exists("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy"):
-    #     prev_stats = np.load("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy")
-    #     prev_stats = np.append(prev_stats, ppl.item())
-    # else:
-    #     prev_stats = np.array([ppl.item()])
-    # np.save("/parsadata1/lisa/experiments/magn_based/6.7b/ppl.npy", prev_stats)
     if log_wandb:
          wandb.log({f'{dataset}/perplexity': ppl.item()})
 
@@ -409,15 +403,10 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name)
     if model_args.model_name_or_path:
-        # model = tp.tensor_parallel(OPTForCausalLM.from_pretrained(
-        #     model_args.model_name_or_path,
-        #     torch_dtype=torch.bfloat16,
-        # ))
         model = OPTForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             torch_dtype=torch.float32,
         )
-        # model.load_state_dict(torch.load("/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model_no_lm_head.pth"), strict=False)
         model.seqlen = model.config.max_position_embeddings
     else:
         model = AutoModelForCausalLM.from_config(config)
