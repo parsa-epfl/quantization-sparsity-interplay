@@ -21,7 +21,7 @@ else
 	blocksize=32
 fi
 
-rm ../../../src/transformers/bfp/bfp_config.yaml
+rm ../../../../src/transformers/bfp/bfp_config.yaml
 echo -e "hbfp:
    num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
@@ -29,8 +29,7 @@ echo -e "hbfp:
    epsilon: 0.00000001 
    mant_bits: $mantbits 
    weight_mant_bits: 15 
-   bfp_tile_size: 8 
-   bfp_block_size: $blocksize 
+   block_size: $blocksize 
    in_sparsity: False
    w_sparsity: $sparsify 
    grad_sparsity: False
@@ -43,9 +42,9 @@ echo -e "hbfp:
    bit_range: $bit_range
    bfloat: 16
    scale_bits: 8
-   device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+   device: 'cuda'" >> ../../../../src/transformers/bfp/bfp_config.yaml
 
-cd ../../../
+cd ../../../../
 pip install -e .
 
 cd examples/pytorch/language-modeling
