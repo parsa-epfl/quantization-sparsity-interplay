@@ -25,7 +25,7 @@ def extract_mx_args(bfp_args):
     mx_args = {}
     mx_args["w_elem_format"] = bfp_args["mx_w_elem_format"]
     mx_args["a_elem_format"] = bfp_args["mx_a_elem_format"]
-    mx_args["block_size"] = bfp_args["bfp_block_size"]
+    mx_args["block_size"] = bfp_args["block_size"]
     mx_args["bfloat"] = bfp_args["bfloat"]
     mx_args["scale_bits"] = bfp_args["scale_bits"] 
     return mx_args
