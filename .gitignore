@@ -166,4 +166,5 @@ tags
 .DS_Store
 
 # Temp results
-examples/pytorch/image-classification/sparse_results
+examples/pytorch/image-classification/imagenet-1k_results
+examples/pytorch/image-classification/*.txt
