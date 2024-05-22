@@ -226,6 +226,7 @@ def main():
             data_args.dataset_config_name,
             cache_dir=model_args.cache_dir,
             task="image-classification",
+            ignore_verifications=True,
             use_auth_token=True if model_args.use_auth_token else None,
         )
     else:
@@ -257,12 +258,14 @@ def main():
         id2label[str(i)] = label
 
     # Load the accuracy metric from the datasets package
+    # metric = evaluate.load("./logloss.py")
     metric = evaluate.load("accuracy")
 
     # Define our compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
     # predictions and label_ids field) and has to return a dictionary string to float.
     def compute_metrics(p):
         """Computes accuracy on a batch of predictions"""
+        # return metric.compute(predictions=p.predictions, references=p.label_ids)
         return metric.compute(predictions=np.argmax(p.predictions, axis=1), references=p.label_ids)
 
     config = AutoConfig.from_pretrained(

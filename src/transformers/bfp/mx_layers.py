@@ -27,8 +27,8 @@ class MXLinear(Linear):
         device=None,
         sparsity_mode="structured",
         sparsity_frac=0.0,
-        N=[],
-        M=[],
+        N=0,
+        M=0,
     ):
         mx_specs = apply_mx_specs(mx_specs)
         mx_specs = finalize_mx_specs(mx_specs)
@@ -47,7 +47,7 @@ class MXLinear(Linear):
         if self.sparsity:
             if not self.sparsity_init:
                 if self.sparsity_mode == "structured":
-                    self.weight = torch.nn.Parameter(_structured_N_M_sparsity(self.weight, self.device, self.N[0], self.M[0]))
+                    self.weight = torch.nn.Parameter(_structured_N_M_sparsity(self.weight, self.device, self.N, self.M))
                 else:
                     self.weight = torch.nn.Parameter(_unstructured_sparsity(self.weight, self.device, self.sparsity_frac))
                 self.sparsity_init = True
@@ -69,8 +69,8 @@ class MXConv2d(Conv2d):
         device=None,
         sparsity_mode="structured",
         sparsity_frac=0.0,
-        N=[],
-        M=[],
+        N=0,
+        M=0,
     ):
         mx_specs = apply_mx_specs(mx_specs)
         mx_specs = finalize_mx_specs(mx_specs)
@@ -89,17 +89,19 @@ class MXConv2d(Conv2d):
         if self.sparsity:
             if not self.sparsity_init:
                 if self.sparsity_mode == "structured":
-                    self.weight = torch.nn.Parameter(_structured_N_M_sparsity(self.weight, self.device, self.N[0], self.M[0]))
+                    self.weight = torch.nn.Parameter(_structured_N_M_sparsity(self.weight, self.device, self.N, self.M))
                 else:
                     self.weight = torch.nn.Parameter(_unstructured_sparsity(self.weight, self.device, self.sparsity_frac))
                 self.sparsity_init = True
         return super().forward(inputs)
 
-def MXMatmul(in1, in2, mx_specs=None, sparsity=False, sparsity_mode="unstructured", device=None, N=[], M=[], sparsity_frac=0):
+def MXMatmul(in1, in2, mx_specs=None, sparsity=False, sparsity_mode="unstructured", device=None, N=0, M=0, sparsity_frac=0):
     assert(sparsity_mode in ["structured", "unstructured"])
     if sparsity:
         if sparsity_mode == "structured":
-            in2 = torch.transpose(_structured_N_M_sparsity(torch.transpose(in2, -1, -2), device, N[0], M[0]), -1, -2)
+            in2 = torch.transpose(_structured_N_M_sparsity(torch.transpose(in2, -1, -2), device, N, M), -1, -2)
         else:
             in2 = torch.transpose(_unstructured_sparsity(torch.transpose(in2, -1, -2), device, sparsity_frac), -1, -2)
     return mx_matmul(in1, in2, mx_specs=mx_specs)
+        
+

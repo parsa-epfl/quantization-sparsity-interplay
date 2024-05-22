@@ -6,7 +6,7 @@ def quantize(x, scale, zero, maxq):
     return scale * (q - zero)
 
 class Quantizer(nn.Module):
-    # int8 quantizer from SparseGPT framework https://github.com/IST-DASLab/sparsegpt
+
     def __init__(self, shape=1):
         super(Quantizer, self).__init__()
         self.register_buffer('maxq', torch.tensor(0))

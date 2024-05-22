@@ -28,7 +28,7 @@ from ...modeling_outputs import (
     BaseModelOutputWithPoolingAndNoAttention,
     ImageClassifierOutputWithNoAttention,
 )
-from ...modeling_utils import PreTrainedModel
+from ...modeling_utils import BackboneMixin, PreTrainedModel
 from ...utils import (
     add_code_sample_docstrings,
     add_start_docstrings,
@@ -36,17 +36,16 @@ from ...utils import (
     logging,
     replace_return_docstrings,
 )
-from ...utils.backbone_utils import BackboneMixin
 from .configuration_resnet import ResNetConfig
 
 from ...bfp.bfp_ops import BFPLinear, BFPConv2d, F_matmul_bfp
 from ...bfp import bfp_util
-from ...bfp.mx_layers import MXLinear, MXMatmul, MXConv2d
 
 logger = logging.get_logger(__name__)
 
 # General docstring
 _CONFIG_FOR_DOC = "ResNetConfig"
+_FEAT_EXTRACTOR_FOR_DOC = "AutoImageProcessor"
 
 # Base docstring
 _CHECKPOINT_FOR_DOC = "microsoft/resnet-50"
@@ -56,8 +55,10 @@ _EXPECTED_OUTPUT_SHAPE = [1, 2048, 7, 7]
 _IMAGE_CLASS_CHECKPOINT = "microsoft/resnet-50"
 _IMAGE_CLASS_EXPECTED_OUTPUT = "tiger cat"
 
-
-from ..deprecated._archive_maps import RESNET_PRETRAINED_MODEL_ARCHIVE_LIST  # noqa: F401, E402
+RESNET_PRETRAINED_MODEL_ARCHIVE_LIST = [
+    "microsoft/resnet-50",
+    # See all resnet models at https://huggingface.co/models?filter=resnet
+]
 
 
 class ResNetConvLayer(nn.Module):
@@ -67,12 +68,8 @@ class ResNetConvLayer(nn.Module):
         super().__init__()
         self.bfp_args = bfp_util.get_bfp_args()
 
-        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
-        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
-        self.convolution = MXConv2d(
-            in_channels, out_channels, kernel=kernel_size, stride=stride, padding=kernel_size//2, bias=False, mx_specs=self.mx_specs, **self.sparsity_args)
-        # self.convolution = BFPConv2d(
-        #     in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size//2, bias=False, **self.bfp_args)
+        self.convolution = BFPConv2d(
+            in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size//2, bias=False, **self.bfp_args)
         # self.convolution = nn.Conv2d(
         #     in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=kernel_size // 2, bias=False
         # )
@@ -119,15 +116,8 @@ class ResNetShortCut(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, stride: int = 2):
         super().__init__()
         self.bfp_args = bfp_util.get_bfp_args()
-        
-        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
-        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
-
-        self.convolution = MXConv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False, mx_specs=self.mx_specs, **self.sparsity_args)
-
-        # self.convolution = BFPConv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False, **self.bfp_args)
+        self.convolution = BFPConv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False, **self.bfp_args)
         # self.convolution = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
-
         self.normalization = nn.BatchNorm2d(out_channels)
 
     def forward(self, input: Tensor) -> Tensor:
@@ -167,18 +157,11 @@ class ResNetBottleNeckLayer(nn.Module):
     A classic ResNet's bottleneck layer composed by three `3x3` convolutions.
 
     The first `1x1` convolution reduces the input by a factor of `reduction` in order to make the second `3x3`
-    convolution faster. The last `1x1` convolution remaps the reduced features to `out_channels`. If
-    `downsample_in_bottleneck` is true, downsample will be in the first layer instead of the second layer.
+    convolution faster. The last `1x1` convolution remaps the reduced features to `out_channels`.
     """
 
     def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        stride: int = 1,
-        activation: str = "relu",
-        reduction: int = 4,
-        downsample_in_bottleneck: bool = False,
+        self, in_channels: int, out_channels: int, stride: int = 1, activation: str = "relu", reduction: int = 4
     ):
         super().__init__()
         should_apply_shortcut = in_channels != out_channels or stride != 1
@@ -187,10 +170,8 @@ class ResNetBottleNeckLayer(nn.Module):
             ResNetShortCut(in_channels, out_channels, stride=stride) if should_apply_shortcut else nn.Identity()
         )
         self.layer = nn.Sequential(
-            ResNetConvLayer(
-                in_channels, reduces_channels, kernel_size=1, stride=stride if downsample_in_bottleneck else 1
-            ),
-            ResNetConvLayer(reduces_channels, reduces_channels, stride=stride if not downsample_in_bottleneck else 1),
+            ResNetConvLayer(in_channels, reduces_channels, kernel_size=1),
+            ResNetConvLayer(reduces_channels, reduces_channels, stride=stride),
             ResNetConvLayer(reduces_channels, out_channels, kernel_size=1, activation=None),
         )
         self.activation = ACT2FN[activation]
@@ -221,18 +202,10 @@ class ResNetStage(nn.Module):
 
         layer = ResNetBottleNeckLayer if config.layer_type == "bottleneck" else ResNetBasicLayer
 
-        if config.layer_type == "bottleneck":
-            first_layer = layer(
-                in_channels,
-                out_channels,
-                stride=stride,
-                activation=config.hidden_act,
-                downsample_in_bottleneck=config.downsample_in_bottleneck,
-            )
-        else:
-            first_layer = layer(in_channels, out_channels, stride=stride, activation=config.hidden_act)
         self.layers = nn.Sequential(
-            first_layer, *[layer(out_channels, out_channels, activation=config.hidden_act) for _ in range(depth - 1)]
+            # downsampling is done in the first layer with stride of 2
+            layer(in_channels, out_channels, stride=stride, activation=config.hidden_act),
+            *[layer(out_channels, out_channels, activation=config.hidden_act) for _ in range(depth - 1)],
         )
 
     def forward(self, input: Tensor) -> Tensor:
@@ -292,6 +265,7 @@ class ResNetPreTrainedModel(PreTrainedModel):
     config_class = ResNetConfig
     base_model_prefix = "resnet"
     main_input_name = "pixel_values"
+    supports_gradient_checkpointing = True
 
     def _init_weights(self, module):
         if isinstance(module, nn.Conv2d):
@@ -299,6 +273,10 @@ class ResNetPreTrainedModel(PreTrainedModel):
         elif isinstance(module, (nn.BatchNorm2d, nn.GroupNorm)):
             nn.init.constant_(module.weight, 1)
             nn.init.constant_(module.bias, 0)
+
+    def _set_gradient_checkpointing(self, module, value=False):
+        if isinstance(module, ResNetEncoder):
+            module.gradient_checkpointing = value
 
 
 RESNET_START_DOCSTRING = r"""
@@ -316,7 +294,7 @@ RESNET_INPUTS_DOCSTRING = r"""
     Args:
         pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`):
             Pixel values. Pixel values can be obtained using [`AutoImageProcessor`]. See
-            [`ConvNextImageProcessor.__call__`] for details.
+            [`AutoImageProcessor.__call__`] for details.
 
         output_hidden_states (`bool`, *optional*):
             Whether or not to return the hidden states of all layers. See `hidden_states` under returned tensors for
@@ -342,6 +320,7 @@ class ResNetModel(ResNetPreTrainedModel):
 
     @add_start_docstrings_to_model_forward(RESNET_INPUTS_DOCSTRING)
     @add_code_sample_docstrings(
+        processor_class=_FEAT_EXTRACTOR_FOR_DOC,
         checkpoint=_CHECKPOINT_FOR_DOC,
         output_type=BaseModelOutputWithPoolingAndNoAttention,
         config_class=_CONFIG_FOR_DOC,
@@ -390,13 +369,9 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
         self.resnet = ResNetModel(config)
         # classification head
         self.bfp_args = bfp_util.get_bfp_args()
-        self.sparsity_args = bfp_util.extract_sparsity_args(self.bfp_args)
-        self.sparsity_args["sparsity"] = False                  # TODO: this is temporary because during finetuning, it was not sparsified
-        self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            MXLinear(config.hidden_sizes[-1], config.num_labels, mx_specs=self.mx_specs, **self.sparsity_args),
-            # BFPLinear(config.hidden_sizes[-1], config.num_labels, **self.bfp_args) if config.num_labels > 0 else nn.Identity()
+            BFPLinear(config.hidden_sizes[-1], config.num_labels, **self.bfp_args) if config.num_labels > 0 else nn.Identity()
             # nn.Linear(config.hidden_sizes[-1], config.num_labels) if config.num_labels > 0 else nn.Identity(),
         )
         # initialize weights and apply final processing
@@ -404,6 +379,7 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
 
     @add_start_docstrings_to_model_forward(RESNET_INPUTS_DOCSTRING)
     @add_code_sample_docstrings(
+        processor_class=_FEAT_EXTRACTOR_FOR_DOC,
         checkpoint=_IMAGE_CLASS_CHECKPOINT,
         output_type=ImageClassifierOutputWithNoAttention,
         config_class=_CONFIG_FOR_DOC,
@@ -468,14 +444,26 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
 class ResNetBackbone(ResNetPreTrainedModel, BackboneMixin):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
-        self.num_features = [config.embedding_size] + config.hidden_sizes
+        self.stage_names = config.stage_names
         self.embedder = ResNetEmbeddings(config)
         self.encoder = ResNetEncoder(config)
 
+        self.out_features = config.out_features if config.out_features is not None else [self.stage_names[-1]]
+
+        out_feature_channels = {}
+        out_feature_channels["stem"] = config.embedding_size
+        for idx, stage in enumerate(self.stage_names[1:]):
+            out_feature_channels[stage] = config.hidden_sizes[idx]
+
+        self.out_feature_channels = out_feature_channels
+
         # initialize weights and apply final processing
         self.post_init()
+
+    @property
+    def channels(self):
+        return [self.out_feature_channels[name] for name in self.out_features]
 
     @add_start_docstrings_to_model_forward(RESNET_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=BackboneOutput, config_class=_CONFIG_FOR_DOC)
