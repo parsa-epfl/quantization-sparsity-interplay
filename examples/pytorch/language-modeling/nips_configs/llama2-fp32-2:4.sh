@@ -1,19 +1,18 @@
 sparsity_num_format=fp32
 mantbits=7
-sparsify=True
-sparsity_mode='structured'
 
-rearrange=False
+sparsify=True
 first='s'
-bfloat=16
-scale_bits=8
+sparsity_mode='structured'
+mx_w_elem_format='fp8_e4m3'
+mx_a_elem_format='fp8_e4m3'
 
 sparsity_frac=0.5
-N="[2]"
-M="[4]"
+N=2
+M=4
+epochs=3
 
-unconstrained=False
-bit_range="[]"
+model='meta-llama/Llama-2-70b-hf'
 
 if [ $sparsity_num_format == bfp ]; then
 	blocksize=64
@@ -21,7 +20,9 @@ else
 	blocksize=32
 fi
 
-rm ../../../src/transformers/bfp/bfp_config.yaml
+filename=llama2\_fn_fp32\_chkpt
+
+rm ../../../../src/transformers/bfp/bfp_config.yaml
 echo -e "hbfp:
    num_format: 'bfp'
    sparsity_num_format: '$sparsity_num_format' 
@@ -29,30 +30,28 @@ echo -e "hbfp:
    epsilon: 0.00000001 
    mant_bits: $mantbits 
    weight_mant_bits: 15 
-   bfp_tile_size: 8 
-   bfp_block_size: $blocksize 
+   block_size: $blocksize 
    in_sparsity: False
    w_sparsity: $sparsify 
    grad_sparsity: False
-   rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
    M: $M
-   unconstrained: $unconstrained
    first: $first
    sparsity_mode: $sparsity_mode
-   bit_range: $bit_range
-   bfloat: $bfloat
-   scale_bits: $scale_bits
-   device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
+   mx_w_elem_format: $mx_w_elem_format
+   mx_a_elem_format: $mx_a_elem_format
+   bfloat: 16
+   scale_bits: 8
+   device: 'cuda'" >> ../../../../src/transformers/bfp/bfp_config.yaml
 
-cd ../../../
+cd ../../../../
 pip install -e .
 
 cd examples/pytorch/language-modeling
 python3 run_llama.py \
-    --model_name_or_path /scratch/kostenok/Llama-2-7b-hf-checkpoints  \
-    --tokenizer_name /scratch/kostenok/Llama-2-7b-hf-checkpoints \
+    --model_name_or_path $model  \
+    --tokenizer_name $model \
     --dataset_name wikitext \
     --dataset_config_name wikitext-2-raw-v1 \
     --per_device_train_batch_size 1 \
@@ -63,7 +62,7 @@ python3 run_llama.py \
     --save_steps 60 \
     --logging_steps 10 \
     --remove_unused_columns True \
-    --output_dir PATH_TO_OUTPUT_DIR \
+    --output_dir $filename \
     --overwrite_output_dir \
     --learning_rate 5e-05 \
     --adam_beta1 0.9  \

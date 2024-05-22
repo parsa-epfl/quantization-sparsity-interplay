@@ -1,25 +1,26 @@
 sparsity_num_format=bfp
-mantbits=5
-sparsify=True
-sparsity_mode='unstructured'
+mantbits=7
 
-rearrange=False
+sparsify=True
 first='q'
-bfloat=16
-scale_bits=8
+sparsity_mode='unstructured'
+mx_w_elem_format='fp8_e4m3'
+mx_a_elem_format='fp8_e4m3'
 
 sparsity_frac=0.5
-N="[2]"
-M="[4]"
+N=2
+M=4
+epochs=3
 
-unconstrained=False
-bit_range="[]"
+model='facebook/opt-125m'
 
 if [ $sparsity_num_format == bfp ]; then
 	blocksize=64
 else
 	blocksize=32
 fi
+
+filename=opt-125\_fn_hbfp8_unstr\_chkpt
 
 rm ../../../src/transformers/bfp/bfp_config.yaml
 echo -e "hbfp:
@@ -34,7 +35,6 @@ echo -e "hbfp:
    in_sparsity: False
    w_sparsity: $sparsify 
    grad_sparsity: False
-   rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
    M: $M
@@ -42,8 +42,8 @@ echo -e "hbfp:
    first: $first
    sparsity_mode: $sparsity_mode
    bit_range: $bit_range
-   bfloat: $bfloat
-   scale_bits: $scale_bits
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
 
 cd ../../../
@@ -51,8 +51,8 @@ pip install -e .
    
 cd examples/pytorch/language-modeling
 CUDA_VISIBLE_DEVICES=0 python3 run_opt.py \
-    --model_name_or_path facebook/opt-125m \
-    --tokenizer_name facebook/opt-125m \
+    --model_name_or_path $model \
+    --tokenizer_name $model \
     --dataset_name wikitext \
     --dataset_config_name wikitext-2-raw-v1 \
     --seed 14 \
@@ -60,7 +60,7 @@ CUDA_VISIBLE_DEVICES=0 python3 run_opt.py \
     --per_device_eval_batch_size 8 \
     --do_train \
     --do_eval \
-    --output_dir /scratch/kostenok/experiments/opt-125/$sparsity_num_format/$mant_bits/$seed \
+    --output_dir $filename \
     --overwrite_output_dir \
     --learning_rate 1e-04 \
     --adam_beta1 0.9  \

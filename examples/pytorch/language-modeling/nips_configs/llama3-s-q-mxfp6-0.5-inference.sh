@@ -1,27 +1,19 @@
 sparsity_num_format=mx
 mantbits=8
-sparsify=True
-sparsity_mode='structured'
-mx_w_elem_format='fp6_e2m3'
-mx_a_elem_format='fp6_e2m3'
 
-rearrange=False
+sparsify=True
 first='s'
-bfloat=16
-scale_bits=8
+sparsity_mode='unstructured'
+mx_w_elem_format='fp8_e4m3'
+mx_a_elem_format='fp8_e4m3'
 
 sparsity_frac=0.5
-N="[2]"
-M="[4]"
+N=2
+M=4
+epochs=3
 
-unconstrained=False
-bit_range="[]"
-
-if [ $sparsity_num_format == bfp ]; then
-	blocksize=64
-else
-	blocksize=32
-fi
+model='llama3-sparse-fn-unstr'
+filename=llama3\_eval_mxfp6_unstr\_chkpt
 
 rm ../../../src/transformers/bfp/bfp_config.yaml
 echo -e "hbfp:
@@ -36,7 +28,6 @@ echo -e "hbfp:
    in_sparsity: False
    w_sparsity: $sparsify 
    grad_sparsity: False
-   rearrange: $rearrange
    sparsity_frac: $sparsity_frac
    N: $N
    M: $M
@@ -46,8 +37,8 @@ echo -e "hbfp:
    bit_range: $bit_range
    mx_w_elem_format: $mx_w_elem_format
    mx_a_elem_format: $mx_a_elem_format
-   bfloat: $bfloat
-   scale_bits: $scale_bits
+   bfloat: 16
+   scale_bits: 8
    device: 'cuda'" >> ../../../src/transformers/bfp/bfp_config.yaml
 
 cd ../../../
@@ -55,12 +46,12 @@ pip install -e .
 
 cd examples/pytorch/language-modeling
 CUDA_VISIBLE_DEVICES=0 python3 run_llama.py \
-    --model_name_or_path PATH_TO_CHECKPOINT \
-    --tokenizer_name /scratch/kostenok/llama3-hf-checkpoint \
+    --model_name_or_path $model \
+    --tokenizer_name $model \
     --dataset_name wikitext \
     --dataset_config_name wikitext-2-raw-v1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
     --do_eval \
     --remove_unused_columns True \
-    --output_dir PATH_TO_OUTPUT_DIR \
+    --output_dir $filename \
