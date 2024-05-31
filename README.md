@@ -8,7 +8,7 @@ The paper mathematically investigates the relationship between quantization and 
 We are excited to share our code with the community and are working on preparing it for release. Please stay tuned for updates, and thank you for your patience!
 
 ## About Our Work
-Different forms of quantization and sparsity techniques have emerged as promising approaches to compress models, especially in the modern era of LLMs. This paper focuses on the combined application of both of these techniques, and is part of the broader research efforts to make the memopry footprint of LLMs smaller, and make them more accessible. For further details, we invite you to read the paper.
+Various forms of quantization and sparsity techniques have emerged as promising approaches to compress models, especially in the modern era of LLMs. This paper focuses on the combined application of both of these techniques, and is part of the broader research efforts to make the memory footprint of LLMs smaller, and make them more accessible. Our mathematical analysis and extensive empirical study with large language models (OPT, LLaMA) and vision transformers (ViT) demonstrate that quantization and sparsity are not orthogonal and their combined use can adversely affect model accuracy. Our findings provide valuable insights for optimizing the compression of large models while preserving accuracy.
 
 ## Citation
 If you find the analysis and experimental results useful for your own research, please cite our paper:
