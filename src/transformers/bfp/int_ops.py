@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 
 def quantize(x, scale, zero, maxq):
+    #print("before quantization: ", x.shape, x[0])
+    #print(x[0])
     q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
+    #print("after quantization: ", x.shape, (scale * (q - zero))[0])
     return scale * (q - zero)
 
 class Quantizer(nn.Module):
@@ -33,11 +36,13 @@ class Quantizer(nn.Module):
         self.maxq = self.maxq.to(dev)
 
         shape = x.shape
+        #print(shape)
         if self.perchannel:
             if weight:
                 x = x.flatten(1)
                 if self.grouprows > 1: 
                     x = x.reshape((x.shape[0] // self.grouprows, -1))
+                # print(x.shape)
             else:
                 if len(shape) == 4:
                     x = x.permute([1, 0, 2, 3])
@@ -52,7 +57,8 @@ class Quantizer(nn.Module):
         tmp = torch.zeros(x.shape[0], device=dev)
         xmin = torch.minimum(x.min(1)[0], tmp)
         xmax = torch.maximum(x.max(1)[0], tmp)
-
+        #print(xmin.shape)
+        #print(xmax.shape)
         if self.sym:
             xmax = torch.maximum(torch.abs(xmin), xmax)
             tmp = xmin < 0
@@ -101,6 +107,9 @@ class Quantizer(nn.Module):
             shape = [-1] + [1] * (len(shape) - 1)
             self.scale = self.scale.reshape(shape)
             self.zero = self.zero.reshape(shape)
+            #print("scale", self.scale.shape)
+            #print("zero", self.zero.shape)
+            #print(self.sale)
             return
         if len(shape) == 4:
             self.scale = self.scale.reshape((1, -1, 1, 1))

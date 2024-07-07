@@ -58,7 +58,6 @@ from transformers.utils.versions import require_version
 
 
 from accelerate import Accelerator
-import tensor_parallel as tp
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")

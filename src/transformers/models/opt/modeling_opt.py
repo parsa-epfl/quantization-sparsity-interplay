@@ -168,10 +168,14 @@ class OPTAttention(nn.Module):
             self.q_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
             self.out_proj = MXLinear(embed_dim, embed_dim, bias=bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
         elif self.bfp_args["sparsity_num_format"] in ["bfp", "int", "fp32"]:
-            self.k_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-            self.v_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-            self.q_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
-            self.out_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+            # self.k_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+            # self.v_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+            # self.q_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+            # self.out_proj = BFPLinear(embed_dim, embed_dim, bias=bias, **self.bfp_args)
+            self.k_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+            self.v_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+            self.q_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
+            self.out_proj = nn.Linear(embed_dim, embed_dim, bias=bias)
         else:
             raise ValueError(f'Unknown quantization format: {self.bfp_args["sparsity_num_format"]} given as argument')
 
@@ -328,11 +332,19 @@ class OPTDecoderLayer(nn.Module):
             self.mx_specs = bfp_util.extract_mx_args(self.bfp_args)
             self.fc1 = MXLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
             self.fc2 = MXLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, mx_specs=self.mx_specs, name=None, **self.sparsity_args)
-        elif self.bfp_args["sparsity_num_format"] in ["bfp", "int", "fp32"]:
+        elif self.bfp_args["sparsity_num_format"] in ["bfp", "int", "fp32"] and self.layer_idx in list(range(15, 30)):
+            self.bfp_args["N"] = 2
             self.fc1 = BFPLinear(self.embed_dim, config.ffn_dim, bias=config.enable_bias, **self.bfp_args)
+            # self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
+            # if self.layer_idx < 10:
+            self.bfp_args["N"] = 1
             self.fc2 = BFPLinear(config.ffn_dim, self.embed_dim, bias=config.enable_bias, **self.bfp_args)
+            # self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
         else:
-            raise ValueError(f'Unknown quantization format: {self.bfp_args["sparsity_num_format"]} given as argument')
+            self.fc1 = nn.Linear(self.embed_dim, config.ffn_dim, bias=config.enable_bias)
+            self.fc2 = nn.Linear(config.ffn_dim, self.embed_dim, bias=config.enable_bias)
+        # else:
+        #     raise ValueError(f'Unknown quantization format: {self.bfp_args["sparsity_num_format"]} given as argument')
         
         self.final_layer_norm = nn.LayerNorm(self.embed_dim, elementwise_affine=config.layer_norm_elementwise_affine)
 

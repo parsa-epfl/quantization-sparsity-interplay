@@ -8,6 +8,9 @@ import logging
 import unittest
 import numpy as np
 from .int_ops import Quantizer
+from .mx_ops import *
+# import mx
+from .elemwise_ops import _quantize_fp
 
 class rounding_modes:
     STOC, DETERM = 'stoc', 'determ'
@@ -35,9 +38,31 @@ def _convert_blocked_float_to_bfp(t, mant_bits, epsilon, rounding_mode, device):
     max_v = torch.pow(2.0, exp) - interval
     t = t/interval
     rounded = round_tensor(t, rounding_mode, device)
-    rounded *=  interval
+    rounded *= interval
     
     return torch.min(torch.max(rounded, -max_v), max_v)
+
+def _convert_blocked_float_to_int(x, mant_bits, device):
+    maxq = torch.tensor(2 ** mant_bits - 1).to(device)
+    tmp = torch.zeros(x.shape[0], device=device)
+    xmin = torch.minimum(x.min(1)[0], tmp)
+    xmax = torch.maximum(x.max(1)[0], tmp)
+    xmax = torch.maximum(torch.abs(xmin), xmax)
+    tmp = xmin < 0
+    if torch.any(tmp):
+        xmin[tmp] = -xmax[tmp]
+    tmp = (xmin == 0) & (xmax == 0)
+    xmin[tmp] = -1
+    xmax[tmp] = +1
+
+    scale = (xmax - xmin) / maxq
+    zero = torch.full_like(scale, (maxq + 1) / 2)
+    # print(x.shape)
+    # print(scale.shape)
+    # print(zero.shape)
+    # print(maxq.shape)
+    q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
+    return scale * (q - zero)
 
 def _no_sparsity_float_to_bfp(t, block_size, mant_bits, epsilon, rounding_mode, device):
     orig_shape = t.shape
@@ -53,6 +78,26 @@ def _no_sparsity_float_to_bfp(t, block_size, mant_bits, epsilon, rounding_mode, 
     t = t.contiguous().view(padded_shape)
     
     return t.narrow(-1, 0, orig_shape[-1])
+
+def _no_sparsity_float_to_int(t, block_size, mant_bits, device):
+    orig_shape = t.shape
+    padded_shape = list(orig_shape)
+    
+    if orig_shape[-1] % block_size != 0:
+        pad_size = block_size - (orig_shape[-1] % block_size)
+        t = F.pad(t, (0, pad_size), 'constant')
+        padded_shape[-1] = orig_shape[-1] + pad_size
+    
+    t = t.contiguous().view(-1, block_size)
+    # t = _convert_blocked_float_to_int(t, mant_bits, device)
+    quantizer = Quantizer()
+    quantizer.configure(bits=mant_bits)
+    quantizer.sym = False
+    quantizer.find_params(t, weight=True)
+    quant_t = quantizer.quantize(t)
+    quant_t = quant_t.contiguous().view(padded_shape)
+    
+    return quant_t.narrow(-1, 0, orig_shape[-1])
 
 def _unstructured_sparsity(t, device, sparsity_frac=0):
     assert (sparsity_frac > 0)
@@ -105,15 +150,16 @@ def _quantize(t, num_format, block_size, mant_bits, weight_mant_bits, sgd_update
             mant_bits = weight_mant_bits
         return _no_sparsity_float_to_bfp(t, block_size, mant_bits, epsilon, rounding_mode, device)
     elif num_format == 'int':
-        if sgd_update:
-            mant_bits = weight_mant_bits
-        weight = True if identifier == 'w' else False
-        quantizer = Quantizer()
-        quantizer.configure(bits=mant_bits)
-        quantizer.find_params(t, weight=weight)
-        quant_t = quantizer.quantize(t)
-        assert(t.shape == quant_t.shape)
-        return quant_t
+        return _no_sparsity_float_to_int(t, block_size, mant_bits, device)
+        # if sgd_update:
+        #     mant_bits = weight_mant_bits
+        # weight = True if identifier == 'w' else False
+        # quantizer = Quantizer()
+        # quantizer.configure(bits=mant_bits)
+        # quantizer.find_params(t, weight=weight)
+        # quant_t = quantizer.quantize(t)
+        # assert(t.shape == quant_t.shape)
+        # return quant_t
     else:
         raise ValueError(f'Unknown quantization format: {num_format} given as argument')
 
@@ -133,7 +179,12 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, block_siz
         sparsity = True
     else:
         sparsity = False
-    
+    # for int4
+    if identifier == "in" and sparsity_num_format == "int":
+        # t = t.to(torch.float16)
+        # q_t = t.to(torch.float32)
+        q_t = _quantize_fp(t, exp_bits=5, mantissa_bits=2)
+        return q_t
     if first == 's':
         sparse_t = _sparsify(t, sparsity, sparsity_mode, device, N, M, sparsity_frac)
         quant_t = _quantize(sparse_t, sparsity_num_format, block_size, mant_bits, weight_mant_bits, sgd_update, epsilon, rounding_mode, device, identifier)
