@@ -1,15 +1,21 @@
 import yaml
 import os
 
-def get_bfp_args():
+def get_bfp_args(filename='bfp_config.yaml'):
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-    with open(os.path.join(__location__, 'bfp_config.yaml')) as file:
+    with open(os.path.join(__location__, filename)) as file:
         try:
             hbfpConfig = yaml.safe_load(file)
-            print(hbfpConfig['hbfp'])   
+            print(hbfpConfig['hbfp'])
             return hbfpConfig['hbfp']
         except yaml.YAMLError as exc:
             print(exc)
+
+def get_bfp_args_per_layer(layer_type="attn", layer_idx=self.layer_idx):
+    full_config = get_bfp_args(filename='bfp_layer_config.yaml')
+    layer_config = full_config[layer_type]
+    return layer_config
+
 
 def extract_sparsity_args(bfp_args):
     sparsity_args = {}

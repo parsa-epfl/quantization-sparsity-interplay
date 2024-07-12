@@ -1,3 +1,45 @@
+attn:
+   sparsify=False
+   first='s'
+   sparsity_mode='structured'
+   sparsity_frac=0.5
+   N=2
+   M=4
+   blocksize=64
+   a_elem_format: "fp"
+   a_mant_bits: 16
+   w_elem_format: "int"
+   w_mantbits: 4
+   layer_ids: []
+
+ff1:
+   sparsify=False
+   first='s'
+   sparsity_mode='structured'
+   sparsity_frac=0.5
+   N=2
+   M=4
+   blocksize=64
+   a_elem_format: "fp"
+   a_mant_bits: 16
+   w_elem_format: "int"
+   w_mantbits: 4
+   layer_ids: [6, 7, 8, 9, 10]
+
+ff2:
+   sparsify=False
+   first='s'
+   sparsity_mode='structured'
+   sparsity_frac=0.5
+   N=2
+   M=4
+   blocksize=64
+   a_elem_format: "fp"
+   a_mant_bits: 16
+   w_elem_format: "int"
+   w_mantbits: 4
+   layer_ids: [6, 7, 8, 9, 10]
+
 sparsity_num_format=int
 mantbits=4
 

@@ -1,0 +1,48 @@
+hbfp:
+   attn:
+      num_format: bfp
+      a_elem_format: fp
+      a_mant_bits: 16
+      w_elem_format: int
+      w_mant_bits: 4
+      block_size: 1024 
+      w_sparsity: True
+      N: 2
+      M: 4
+      first: s
+      sparsity_mode: structured
+      device: cuda
+      sparsify: True
+      layer_ids: []
+
+   ff1:
+      num_format: bfp
+      a_elem_format: fp
+      a_mant_bits: 16
+      w_elem_format: int
+      w_mant_bits: 4
+      block_size: 1024 
+      w_sparsity: True
+      N: 2
+      M: 4
+      first: s
+      sparsity_mode: structured
+      device: cuda
+      sparsify: True
+      layer_ids: [6, 7, 8, 9, 10]
+
+   ff2:
+      num_format: bfp
+      a_elem_format: fp
+      a_mant_bits: 16
+      w_elem_format: int
+      w_mant_bits: 4
+      block_size: 1024 
+      w_sparsity: True
+      N: 2
+      M: 4
+      first: s
+      sparsity_mode: structured
+      device: cuda
+      sparsify: True
+      layer_ids: [6, 7, 8, 9, 10]

@@ -57,10 +57,6 @@ def _convert_blocked_float_to_int(x, mant_bits, device):
 
     scale = (xmax - xmin) / maxq
     zero = torch.full_like(scale, (maxq + 1) / 2)
-    # print(x.shape)
-    # print(scale.shape)
-    # print(zero.shape)
-    # print(maxq.shape)
     q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
     return scale * (q - zero)
 
@@ -89,7 +85,6 @@ def _no_sparsity_float_to_int(t, block_size, mant_bits, device):
         padded_shape[-1] = orig_shape[-1] + pad_size
     
     t = t.contiguous().view(-1, block_size)
-    # t = _convert_blocked_float_to_int(t, mant_bits, device)
     quantizer = Quantizer()
     quantizer.configure(bits=mant_bits)
     quantizer.sym = False
@@ -142,34 +137,29 @@ def _sparsify(t, sparsity, sparsity_mode, device, N, M, sparsity_frac):
     else:
         return t
 
-def _quantize(t, num_format, block_size, mant_bits, weight_mant_bits, sgd_update, epsilon, rounding_mode, device, identifier):
-    if num_format == 'fp32':
+def _quantize(t, num_format, block_size, mant_bits, epsilon, rounding_mode, device, identifier):
+    if num_format == 'fp' and mant_bits == '32':
         return t
     elif num_format == 'bfp':
-        if sgd_update:
-            mant_bits = weight_mant_bits
         return _no_sparsity_float_to_bfp(t, block_size, mant_bits, epsilon, rounding_mode, device)
     elif num_format == 'int':
         return _no_sparsity_float_to_int(t, block_size, mant_bits, device)
-        # if sgd_update:
-        #     mant_bits = weight_mant_bits
-        # weight = True if identifier == 'w' else False
-        # quantizer = Quantizer()
-        # quantizer.configure(bits=mant_bits)
-        # quantizer.find_params(t, weight=weight)
-        # quant_t = quantizer.quantize(t)
-        # assert(t.shape == quant_t.shape)
-        # return quant_t
     else:
-        raise ValueError(f'Unknown quantization format: {num_format} given as argument')
+        raise ValueError(f'Unknown quantization format: {num_format}-{mant_bits} given as argument')
 
-def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, block_size,
-                         num_format, weight_mant_bits, in_sparsity, w_sparsity, grad_sparsity, 
-                         sparsity_frac, N, M, sparsity_num_format, first, sparsity_mode, identifier='', sgd_update=False,
-                         mx_w_elem_format='', mx_a_elem_format='', scale_bits=0, bfloat=0):
+def float_to_bfp_blocked(t, a_num_format, a_mant_bits, w_num_format, w_mant_bits, epsilon, rounding_mode, device, block_size, 
+                         in_sparsity, w_sparsity, grad_sparsity, sparsity_frac, N, M, sparsity_num_format, first, sparsity_mode, 
+                         identifier='', sgd_update=False, mx_w_elem_format='', mx_a_elem_format='', scale_bits=0, bfloat=0):
 
     assert (num_format == 'bfp')
-    assert (((sparsity_num_format == 'bfp') and (block_size > 0)) or (sparsity_num_format == 'fp32') or (sparsity_num_format == 'int'))
+    assert (((sparsity_num_format == 'bfp') and (block_size > 0)) or (sparsity_num_format == 'fp') or (sparsity_num_format == 'int'))
+
+    if identifier == 'in':
+        sparsity_num_format = a_num_format
+        mant_bits = a_mant_bits
+    elif identifier == 'w':
+        sparsity_num_format = w_num_format
+        mant_bits = w_mant_bits
 
     if in_sparsity == True and identifier == 'in':
         sparsity = True
@@ -179,19 +169,24 @@ def float_to_bfp_blocked(t, mant_bits, epsilon, rounding_mode, device, block_siz
         sparsity = True
     else:
         sparsity = False
-    # for int4
-    if identifier == "in" and sparsity_num_format == "int":
-        # t = t.to(torch.float16)
-        # q_t = t.to(torch.float32)
-        q_t = _quantize_fp(t, exp_bits=5, mantissa_bits=2)
+    
+    # Enabled support of FP16/FP8 for activations
+    if identifier == "in" and sparsity_num_format == "fp":
+        if a_mant_bits == 16:
+            q_t = t.to(torch.float16)
+            q_t = q_t.to(torch.float32)
+        elif a_mant_bits == 8:
+            q_t = _quantize_fp(t, exp_bits=5, mantissa_bits=2)
+        else: ValueError(f'FP{a_mant_bits} format for activations is not supported')
         return q_t
+        
     if first == 's':
         sparse_t = _sparsify(t, sparsity, sparsity_mode, device, N, M, sparsity_frac)
-        quant_t = _quantize(sparse_t, sparsity_num_format, block_size, mant_bits, weight_mant_bits, sgd_update, epsilon, rounding_mode, device, identifier)
+        quant_t = _quantize(sparse_t, sparsity_num_format, block_size, mant_bits, epsilon, rounding_mode, device, identifier)
         return quant_t
 
     else:
-        quant_t = _quantize(t, sparsity_num_format, block_size, mant_bits, weight_mant_bits, sgd_update, epsilon, rounding_mode, device, identifier)
+        quant_t = _quantize(t, sparsity_num_format, block_size, mant_bits, epsilon, rounding_mode, device, identifier)
         sparse_t = _sparsify(quant_t, sparsity, sparsity_mode, device, N, M, sparsity_frac)
         return sparse_t
 
@@ -249,24 +244,26 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
 def unpack_bfp_args(kwargs):
     bfp_args = {}
     bfp_argn = [('num_format', 'fp32'),
-                ('sparsity_num_format', 'fp32'),
+                ('a_elem_format', 'fp'),
+                ('a_mant_bits', 32),
+                ('w_elem_format', 'fp'),
+                ('w_mant_bits', 32),
                 ('rounding_mode', 'stoc'),
                 ('epsilon', 1e-8),
                 ('mant_bits', 0),
                 ('block_size', 0),
-                ('weight_mant_bits', 0),
                 ('in_sparsity', False),
                 ('w_sparsity', False),
                 ('grad_sparsity', False),
-                ('N', 0),
+                ('N', 0), 
                 ('M', 0),
                 ('first', 's'),
                 ('sparsity_mode', 'unstructured'),
                 ('sparsity_frac', 0),
-                ('mx_w_elem_format', ''),
-                ('mx_a_elem_format', ''),
-                ('bfloat', 16),
-                ('scale_bits', 8),
+                # ('mx_w_elem_format', ''),
+                # ('mx_a_elem_format', ''),
+                # ('bfloat', 16),
+                # ('scale_bits', 8),
                 ('device', 'cpu')]
 
     for arg, default in bfp_argn:
