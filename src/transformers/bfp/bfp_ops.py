@@ -7,6 +7,7 @@ import itertools as it
 import logging
 import unittest
 import numpy as np
+from .bfp_util import *
 from .int_ops import Quantizer
 from .mx_ops import *
 # import mx
@@ -148,10 +149,10 @@ def _quantize(t, num_format, block_size, mant_bits, epsilon, rounding_mode, devi
         raise ValueError(f'Unknown quantization format: {num_format}-{mant_bits} given as argument')
 
 def float_to_bfp_blocked(t, a_num_format, a_mant_bits, w_num_format, w_mant_bits, epsilon, rounding_mode, device, block_size, 
-                         in_sparsity, w_sparsity, grad_sparsity, sparsity_frac, N, M, sparsity_num_format, first, sparsity_mode, 
+                         in_sparsity, w_sparsity, grad_sparsity, sparsity_frac, N, M, sparsity_num_format, sparsify, first, sparsity_mode, 
                          identifier='', sgd_update=False, mx_w_elem_format='', mx_a_elem_format='', scale_bits=0, bfloat=0):
 
-    assert (num_format == 'bfp')
+    # assert (num_format == 'bfp')
     assert (((sparsity_num_format == 'bfp') and (block_size > 0)) or (sparsity_num_format == 'fp') or (sparsity_num_format == 'int'))
 
     if identifier == 'in':
@@ -196,8 +197,8 @@ def MxM_pre_processing(x, w, transpose, **bfp_args):
     else:
         return (float_to_bfp_blocked(x, **bfp_args, identifier='in'), float_to_bfp_blocked(w, **bfp_args, identifier='w'))
 
-def _get_op_name(name, epsilon, mant_bits, rounding_mode, **kwargs):
-    return  '%s_BFP_%s_%d' % (name, rounding_mode, mant_bits)
+def _get_op_name(name, epsilon, w_mant_bits, rounding_mode, **kwargs):
+    return  '%s_BFP_%s_%d' % (name, rounding_mode, w_mant_bits)
 
 def _gen_bfp_op(op, name, bfp_args, transpose=False):
     name = _get_op_name(name, **bfp_args)
@@ -241,69 +242,39 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
 
     return _bfp_ops[name]
 
-def unpack_bfp_args(kwargs):
-    bfp_args = {}
-    bfp_argn = [('num_format', 'fp32'),
-                ('a_elem_format', 'fp'),
-                ('a_mant_bits', 32),
-                ('w_elem_format', 'fp'),
-                ('w_mant_bits', 32),
-                ('rounding_mode', 'stoc'),
-                ('epsilon', 1e-8),
-                ('mant_bits', 0),
-                ('block_size', 0),
-                ('in_sparsity', False),
-                ('w_sparsity', False),
-                ('grad_sparsity', False),
-                ('N', 0), 
-                ('M', 0),
-                ('first', 's'),
-                ('sparsity_mode', 'unstructured'),
-                ('sparsity_frac', 0),
-                # ('mx_w_elem_format', ''),
-                # ('mx_a_elem_format', ''),
-                # ('bfloat', 16),
-                # ('scale_bits', 8),
-                ('device', 'cpu')]
-
-    for arg, default in bfp_argn:
-        if arg in kwargs:
-            bfp_args[arg] = kwargs[arg]
-            del kwargs[arg]
-        else:
-            bfp_args[arg] = default
-    return bfp_args
-
-def F_linear_bfp(**kwargs):
-    bfp_args = unpack_bfp_args(kwargs)
-    if bfp_args['num_format'] == 'bfp':
-        return _get_bfp_op(F.linear, 'linear', bfp_args)
-    else:
-        return F.linear
+# def F_linear_bfp(**kwargs):
+#     bfp_args = unpack_bfp_args(kwargs)
+#     if bfp_args['num_format'] == 'bfp':
+#         return _get_bfp_op(F.linear, 'linear', bfp_args)
+#     else:
+#         return F.linear
 
 def F_matmul_bfp(**kwargs):
-    bfp_args = unpack_bfp_args(kwargs)
-    if bfp_args['num_format'] == 'bfp':
-        return _get_bfp_op(torch.matmul, 'matmul', bfp_args, True)
-    else:
+    self.sparsity_num_format = kwargs['num_format']
+    self.sparsify = kwargs['sparsify']
+
+    if self.sparsify == False and self.sparsity_num_format == 'fp':
         return torch.matmul
+    elif self.sparsity_num_format in ['bfp', 'fp', 'int']:
+        return _get_bfp_op(torch.matmul, 'matmul', kwargs, True)
+    else:
+        raise NotImplementedError('NumFormat not implemented')
 
 class BFPConv2d(torch.nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, dilation=1, groups=1, bias=True, **kwargs):
-        
-        self.bfp_args = unpack_bfp_args(kwargs)
         super().__init__(in_channels, out_channels, kernel_size, stride,
                          padding, dilation, groups, bias)
-        self.num_format = self.bfp_args['num_format']
-        self.conv_op = _get_bfp_op(F.conv2d, 'Conv2d', self.bfp_args)
+        self.sparsity_num_format = kwargs['sparsity_num_format']
+        self.sparsify = kwargs['sparsify']
+        self.conv_op = _get_bfp_op(F.conv2d, 'Conv2d', kwargs)
 
     def forward(self, input):
-        if self.num_format == 'fp32':
+        if self.sparsify == False and self.sparsity_num_format == 'fp':
             return F.conv2d(input, self.weight, self.bias, self.stride,
                             self.padding, self.dilation, self.groups)
 
-        elif self.num_format == 'bfp':
+        elif self.sparsity_num_format in ['bfp', 'fp', 'int']:
             conv = self.conv_op(input, self.weight, self.bias, self.stride,
                                 self.padding, self.dilation, self.groups)
             return conv
@@ -313,17 +284,17 @@ class BFPConv2d(torch.nn.Conv2d):
 
 class BFPLinear(torch.nn.Linear):
     def __init__(self, in_features, out_features, bias=True, **kwargs):
-        
-        self.bfp_args = unpack_bfp_args(kwargs)
         super().__init__(in_features, out_features, bias)
-        self.num_format = self.bfp_args['num_format']
-        self.linear_op = _get_bfp_op(F.linear, 'linear', self.bfp_args)
+        self.sparsity_num_format = kwargs['sparsity_num_format']
+        print(list(kwargs.keys()))
+        self.sparsify = kwargs['sparsify']
+        self.linear_op = _get_bfp_op(F.linear, 'linear', kwargs)
 
     def forward(self, input):
-        if self.num_format == 'fp32':
+        if self.sparsify == False and self.sparsity_num_format == 'fp':
             return F.linear(input, self.weight, self.bias)
-        
-        elif self.num_format == 'bfp':
+    
+        elif self.sparsity_num_format in ['bfp', 'fp', 'int']:
             l = self.linear_op(input, self.weight, self.bias)
             return l
 
