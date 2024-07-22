@@ -46,15 +46,18 @@ def get_bfp_args(filename='bfp_config.yaml'):
 
 def get_bfp_args_per_layer(layer_type, layer_idx):
     full_config = get_bfp_args(filename='bfp_layer_config.yaml')
-    layer_quant_args = full_config[layer_type]
-
-    if layer_idx in layer_quant_args['layer_ids']:
-        # set sparse-and-quantized configuration for target layers
-        layer_config = unpack_bfp_args(layer_quant_args)
+    if layer_type in full_config:
+        for key, layer_quant_args in full_config[layer_type].items():
+            if layer_idx in layer_quant_args['layer_ids']:
+                # set sparse-and-quantized configuration for target layers
+                layer_config = unpack_bfp_args(layer_quant_args)
+            else:
+                # set fp32 dense configuration for remaining layers
+                layer_config = unpack_bfp_args()
+    
     else:
         # set fp32 dense configuration for remaining layers
         layer_config = unpack_bfp_args()
-
     return layer_config
 
 def extract_sparsity_args(bfp_args):

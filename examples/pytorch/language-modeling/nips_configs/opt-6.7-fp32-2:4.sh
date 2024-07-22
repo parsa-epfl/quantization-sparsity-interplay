@@ -60,7 +60,7 @@ python3 run_opt.py \
     --remove_unused_columns False \
     --output_dir $filename \
     --overwrite_output_dir \
-    --learning_rate 5e-04 \
+    --learning_rate 1e-04 \
     --adam_beta1 0.9  \
     --adam_beta2 0.999  \
     --adam_epsilon 1e-08  \

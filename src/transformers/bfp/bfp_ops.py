@@ -161,6 +161,9 @@ def float_to_bfp_blocked(t, a_num_format, a_mant_bits, w_num_format, w_mant_bits
     elif identifier == 'w':
         sparsity_num_format = w_num_format
         mant_bits = w_mant_bits
+    else:
+        # gradients are neither quantized nor sparsified
+        return t
 
     if in_sparsity == True and identifier == 'in':
         sparsity = True
@@ -222,7 +225,8 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
 
         @staticmethod
         def backward(ctx, op_out_grad):
-            return float_to_bfp_blocked(op_out_grad, **bfp_args, identifier='grad')
+            return op_out_grad
+            # return float_to_bfp_blocked(op_out_grad, **bfp_args, identifier='grad')
 
     NewOpOut.__name__ = name + '_Out'
     new_op_out = NewOpOut.apply
@@ -286,7 +290,6 @@ class BFPLinear(torch.nn.Linear):
     def __init__(self, in_features, out_features, bias=True, **kwargs):
         super().__init__(in_features, out_features, bias)
         self.sparsity_num_format = kwargs['sparsity_num_format']
-        print(list(kwargs.keys()))
         self.sparsify = kwargs['sparsify']
         self.linear_op = _get_bfp_op(F.linear, 'linear', kwargs)
 

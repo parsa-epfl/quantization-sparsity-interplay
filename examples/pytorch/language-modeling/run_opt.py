@@ -56,7 +56,6 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
-
 from accelerate import Accelerator
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -305,8 +304,14 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
         neg_log_likelihood = loss.float() * model.seqlen
-        nlls.append(neg_log_likelihood)
+        nlls.append(neg_log_likelihood)    
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
+    if os.path.exists("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy"):
+        prev_stats = np.load("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy")
+        prev_stats = np.append(prev_stats, ppl.item())
+    else:
+        prev_stats = np.array([ppl.item()])
+    np.save("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy", prev_stats) 
     print(f"Perplexity: {ppl.item():3f}")
     if log_wandb:
          wandb.log({f'{dataset}/perplexity': ppl.item()})

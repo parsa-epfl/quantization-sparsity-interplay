@@ -5,7 +5,7 @@ hbfp:
    epsilon: 0.00000001 
    mant_bits: 4 
    weight_mant_bits: 15 
-   block_size: 32 
+   block_size: 1024 
    in_sparsity: False
    w_sparsity: False 
    grad_sparsity: False
