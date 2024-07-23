@@ -6,7 +6,7 @@ rm ../../../../src/transformers/bfp/bfp_layer_config.yaml
 echo -e "hbfp:
     fc1:
         conf_1:
-            layer_ids: [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17, 22, 23, 24, 26]
+            layer_ids: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 17, 22, 23, 24, 26]
             sparsity_num_format: bfp
             a_num_format: fp
             a_mant_bits: 16
@@ -21,9 +21,41 @@ echo -e "hbfp:
             device: cuda
             sparsify: True
             sparsity_frac: 0.5
+        conf_2:
+            layer_ids: [1, 2, 13, 14, 16, 18, 19, 20, 21, 25, 27, 28, 29, 30]
+            sparsity_num_format: bfp
+            a_num_format: fp
+            a_mant_bits: 16
+            w_num_format: int
+            w_mant_bits: 4
+            block_size: 32 
+            w_sparsity: False
+            N: 2
+            M: 4
+            first: s
+            sparsity_mode: structured
+            device: cuda
+            sparsify: False
+            sparsity_frac: 0.5
     fc2:
+        conf_1:
+            layer_ids: [1, 2, 13, 14, 16, 18, 19, 20, 21, 25, 27, 28, 29, 30]
+            sparsity_num_format: bfp
+            a_num_format: fp
+            a_mant_bits: 16
+            w_num_format: int
+            w_mant_bits: 4
+            block_size: 32 
+            w_sparsity: False
+            N: 1
+            M: 4
+            first: s
+            sparsity_mode: structured
+            device: cuda
+            sparsify: False
+            sparsity_frac: 0.5
         conf_2:   
-            layer_ids: [0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17, 22, 23, 24, 26]
+            layer_ids: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 17, 22, 23, 24, 26]
             sparsity_num_format: bfp
             a_num_format: fp
             a_mant_bits: 16

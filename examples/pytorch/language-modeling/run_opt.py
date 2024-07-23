@@ -306,12 +306,6 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         neg_log_likelihood = loss.float() * model.seqlen
         nlls.append(neg_log_likelihood)    
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    if os.path.exists("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy"):
-        prev_stats = np.load("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy")
-        prev_stats = np.append(prev_stats, ppl.item())
-    else:
-        prev_stats = np.array([ppl.item()])
-    np.save("/scratch/kostenok/transformers_hbfp_sparsity/examples/pytorch/language-modeling/ppl.npy", prev_stats) 
     print(f"Perplexity: {ppl.item():3f}")
     if log_wandb:
          wandb.log({f'{dataset}/perplexity': ppl.item()})
