@@ -1,5 +1,5 @@
 """
-Copyright (c) 2024, Parallel Systems Architecture Laboratory (PARSA), EPFL
+Copyright (c) 2024, Parallel Systems Architecture Laboratory (PARSA), EPFL & Machine Learning and Optimization Laboratory (MLO), EFPL
 For the full license text, see transformers_hbfp_sparsity/LICENSE_HBFP.txt
 """
 from .bfp_ops import _get_bfp_op, unpack_bfp_args
