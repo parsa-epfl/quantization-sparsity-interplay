@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Copyright 2020 The HuggingFace Team All rights reserved.
+# Copyright 2020 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Fine-tuning the library models for masked language modeling (BERT, ALBERT, RoBERTa...) on a text file or a dataset.
+Fine-tuning the library models for causal language modeling (GPT, GPT-2, CTRL, ...) on a text file or a dataset.
 
 Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
-https://huggingface.co/models?filter=fill-mask
+https://huggingface.co/models?filter=text-generation
 """
-# You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
+# You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
+
 
 import logging
 import math
 import numpy as np
 import os
 import sys
+import yaml
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Optional
@@ -56,7 +58,6 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
-from accelerate import Accelerator
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.26.0.dev0")
@@ -68,10 +69,8 @@ logger = logging.getLogger(__name__)
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-# GMP = True
-# SPARSITY = 0.5
 torch.manual_seed(42)
-# accelerator = Accelerator()
+
 
 @dataclass
 class ModelArguments:
@@ -211,12 +210,11 @@ class DataTrainingArguments:
 
 
 @torch.no_grad()
-def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
+def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False, log_results_path: str = ""):
     """
     Perplexity computation adapted from SparseGPT framework https://github.com/IST-DASLab/sparsegpt
     """
     print('Evaluating ...')
-    # model = model.to(dev)
     testenc = testenc.input_ids
     nsamples = testenc.numel() // model.seqlen
     print(len(testenc))
@@ -307,8 +305,16 @@ def opt_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
         nlls.append(neg_log_likelihood)    
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
     print(f"Perplexity: {ppl.item():3f}")
+    if log_results_path:
+        with open('../src/transformers/bfp/bfp_layer_config.yaml', 'r') as source_f:
+            data = yaml.safe_load(source_f)
+        with open(log_results_path + '/results.txt', 'w') as dest_f:
+            dest_f.write(f"Perplexity: {ppl.item():3f}\n")
+            dest_f.write("Config:\n")
+            yaml.dump(data, dest_f, default_flow_style=False)
+        
     if log_wandb:
-         wandb.log({f'{dataset}/perplexity': ppl.item()})
+        wandb.log({f'{dataset}/perplexity': ppl.item()})
 
 
 def main():
@@ -547,8 +553,6 @@ def main():
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()  # Saves the tokenizer too for easy upload
-        # with tp.save_tensor_parallel(model):
-        #    torch.save(model.state_dict(), "/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model.pth")
 
         metrics = train_result.metrics
 
@@ -563,7 +567,7 @@ def main():
 
     # Evaluation
     if training_args.do_eval:
-        opt_eval(model, testenc, "cuda", dataset="wikidata", log_wandb=False)
+        opt_eval(model, testenc, "cuda", dataset="wikitext", log_wandb=False, log_results_path=training_args.output_dir)
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)

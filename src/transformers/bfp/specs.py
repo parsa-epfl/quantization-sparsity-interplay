@@ -1,52 +1,7 @@
 """
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
-
-Name: specs.py
-
-This module defines MxSpecs and functions to parse it
-
-Classes:
-    MxSpecs
-
-Functions:
-    get_default_mx_specs
-    get_backwards_mx_specs
-    apply_mx_specs
-    add_mx_args
-    finalize_mx_specs
-    get_mx_specs
-    mx_assert_test
-
-Usage Notes:
-    Some spec options depend on others, like "a_elem_format_bp_os" depends on
-    "a_elem_format". How do we create mx_specs and handle the dependencies?
-
-    1. Create a dict and pass it to finalize_mx_specs:
-    ```
-        specs = {
-            'a_elem_format': 8,
-            'a_elem_format_bp_os': 4,
-        }
-
-        # This will set a_elem_format_bp_ex to 8, but won't touch
-        # a_elem_format_bp_os which you already set.
-        specs = finalize_mx_specs(specs)
-    ```
-
-    2. Use add_mx_args + get_mx_specs with argparse:
-    ```
-        parser = argparse.ArgumentParser()
-        parser = add_mx_args(parser)
-
-        # You can also add your own args here
-
-        args = parser.parse_args()
-
-        specs = get_mx_specs(args)
-    ```
 """
-
 import os
 import collections
 import argparse

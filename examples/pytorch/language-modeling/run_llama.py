@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Copyright 2020 The HuggingFace Team All rights reserved.
+# Copyright 2020 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Fine-tuning the library models for masked language modeling (BERT, ALBERT, RoBERTa...) on a text file or a dataset.
+Fine-tuning the library models for causal language modeling (GPT, GPT-2, CTRL, ...) on a text file or a dataset.
 
 Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
-https://huggingface.co/models?filter=fill-mask
+https://huggingface.co/models?filter=text-generation
 """
-# You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
+# You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
+
 
 import logging
 import math
@@ -66,10 +67,6 @@ logger = logging.getLogger(__name__)
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_CAUSAL_LM_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-# GMP = True
-# SPARSITY = 0.5
-
-# accelerator = Accelerator()
 
 @dataclass
 class ModelArguments:
@@ -284,7 +281,6 @@ def llama_eval(model, testenc, dev, dataset: str, log_wandb: bool = False):
     testenc = testenc.to(dev)
     nlls = []
     for i in range(nsamples):
-    # for i in range(1):
         hidden_states = inps[i].unsqueeze(0)
         if model.model.norm is not None:
             hidden_states = model.model.norm(hidden_states)
@@ -398,7 +394,6 @@ def main():
             model_args.model_name_or_path,
             torch_dtype=torch.float16
         )
-        # model.load_state_dict(torch.load("/parsadata1/lisa/experiments/magn_based/6.7b/fp_2:4/full_model_no_lm_head.pth"), strict=False)
         model.seqlen = model.config.max_position_embeddings
     else:
         model = AutoModelForCausalLM.from_config(config)
@@ -505,9 +500,7 @@ def main():
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
             train_dataset = train_dataset.select(range(max_train_samples)) 
-    # Lisa: train on different samples
-    # train_dataset = train_dataset.select(range(720, 920))
-    # Validation data
+
     testdata = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
     testenc = tokenizer("\n\n".join(testdata['text']), return_tensors='pt')
     if tokenizer.pad_token is None:

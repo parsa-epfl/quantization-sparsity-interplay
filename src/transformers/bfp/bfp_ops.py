@@ -1,3 +1,7 @@
+"""
+Copyright (c) 2024, Parallel Systems Architecture Laboratory (PARSA), EPFL & Machine Learning and Optimization Laboratory (MLO), EFPL
+For the full license text, see transformers_hbfp_sparsity/LICENSE_HBFP.txt
+"""
 import torch
 import torch.nn.functional as F
 from torch.optim import SGD
@@ -9,8 +13,6 @@ import unittest
 import numpy as np
 from .bfp_util import *
 from .int_ops import Quantizer
-from .mx_ops import *
-# import mx
 from .elemwise_ops import _quantize_fp
 
 class rounding_modes:
@@ -152,7 +154,6 @@ def float_to_bfp_blocked(t, a_num_format, a_mant_bits, w_num_format, w_mant_bits
                          in_sparsity, w_sparsity, grad_sparsity, sparsity_frac, N, M, sparsity_num_format, sparsify, first, sparsity_mode, 
                          identifier='', sgd_update=False, mx_w_elem_format='', mx_a_elem_format='', scale_bits=0, bfloat=0):
 
-    # assert (num_format == 'bfp')
     assert (((sparsity_num_format == 'bfp') and (block_size > 0)) or (sparsity_num_format == 'fp') or (sparsity_num_format == 'int'))
 
     if identifier == 'in':
@@ -181,7 +182,8 @@ def float_to_bfp_blocked(t, a_num_format, a_mant_bits, w_num_format, w_mant_bits
             q_t = q_t.to(torch.float32)
         elif a_mant_bits == 8:
             q_t = _quantize_fp(t, exp_bits=5, mantissa_bits=2)
-        else: ValueError(f'FP{a_mant_bits} format for activations is not supported')
+        else: 
+            ValueError(f'FP{a_mant_bits} format for activations is not supported')
         return q_t
         
     if first == 's':
@@ -226,7 +228,6 @@ def _gen_bfp_op(op, name, bfp_args, transpose=False):
         @staticmethod
         def backward(ctx, op_out_grad):
             return op_out_grad
-            # return float_to_bfp_blocked(op_out_grad, **bfp_args, identifier='grad')
 
     NewOpOut.__name__ = name + '_Out'
     new_op_out = NewOpOut.apply
@@ -246,12 +247,6 @@ def _get_bfp_op(op, name, bfp_args, transpose=False):
 
     return _bfp_ops[name]
 
-# def F_linear_bfp(**kwargs):
-#     bfp_args = unpack_bfp_args(kwargs)
-#     if bfp_args['num_format'] == 'bfp':
-#         return _get_bfp_op(F.linear, 'linear', bfp_args)
-#     else:
-#         return F.linear
 
 def F_matmul_bfp(**kwargs):
     self.sparsity_num_format = kwargs['num_format']

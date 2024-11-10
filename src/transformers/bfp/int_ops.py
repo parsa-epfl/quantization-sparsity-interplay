@@ -1,11 +1,10 @@
+# This file includes code from https://github.com/IST-DASLab/sparsegpt, licensed under the Apache License 2.0.
+# For the full license text, see LICENSE.
 import torch
 import torch.nn as nn
 
 def quantize(x, scale, zero, maxq):
-    #print("before quantization: ", x.shape, x[0])
-    #print(x[0])
     q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
-    #print("after quantization: ", x.shape, (scale * (q - zero))[0])
     return scale * (q - zero)
 
 class Quantizer(nn.Module):

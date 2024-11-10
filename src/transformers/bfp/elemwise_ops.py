@@ -1,21 +1,6 @@
 """
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT License.
-
-Name:    elemwise_ops.py
-
-Pytorch functions for elementwise (i.e. bfloat) quantization.
-
-Usage Notes:
- - Use the "Exposed Methods" below to implement autograd functions
- - Use autograd functions to then implement torch.nn.Module(s)
- - Do *not* use methods in this file in Modules, they have no defined
-   backwards pass and will block gradient computation.
- - Avoid importing internal function if at all possible.
-
-Exposed Methods:
-    quantize_elemwise_op - quantizes a tensor to bfloat or other
-                           custom float format
 """
 import os
 import torch

@@ -1,3 +1,7 @@
+"""
+Copyright (c) 2024, Parallel Systems Architecture Laboratory (PARSA), EPFL & Machine Learning and Optimization Laboratory (MLO), EFPL
+For the full license text, see transformers_hbfp_sparsity/LICENSE_HBFP.txt
+"""
 import yaml
 import os
 
@@ -47,7 +51,8 @@ def get_bfp_args(filename='bfp_config.yaml'):
 def get_bfp_args_per_layer(layer_type, layer_idx):
     full_config = get_bfp_args(filename='bfp_layer_config.yaml')
     if layer_type in full_config:
-        for key, layer_quant_args in full_config[layer_type].items():
+        # for key, layer_quant_args in full_config[layer_type].items():
+        for layer_quant_args in full_config[layer_type]:
             if layer_idx in layer_quant_args['layer_ids']:
                 # set sparse-and-quantized configuration for target layers
                 layer_config = unpack_bfp_args(layer_quant_args)
