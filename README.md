@@ -17,12 +17,16 @@ Scripts to run LLaMA, OPT and ViT experiments are provided.
 
 Access scripts for LLaMA and OPT in the following directory:
 ```console
-cd ./examples/pytorch/language-modeling/nips_configs/
+cd ./examples/pytorch/language-modeling/quantization_sparsity_scripts/
 ```
 
 Access scripts for ViT in the following directory:
 ```console
 cd ./examples/pytorch/image-classification/
+```
+*Note*: to run image classification experiments, get access to [ImageNet](https://huggingface.co/datasets/ILSVRC/imagenet-1k) dataset on Hugging Face and add your access token to your `.bashrc` file:
+```console
+export HUGGINGFACE_TOKEN=<your_access_token>
 ```
 
 ## Citation

@@ -22,6 +22,7 @@ from typing import Optional
 import numpy as np
 import torch
 from datasets import load_dataset
+from huggingface_hub import login
 from PIL import Image
 from torchvision.transforms import (
     CenterCrop,
@@ -109,7 +110,6 @@ class DataTrainingArguments:
             )
         },
     )
-
     def __post_init__(self):
         if self.dataset_name is None and (self.train_dir is None and self.validation_dir is None):
             raise ValueError(
@@ -159,7 +159,7 @@ class ModelArguments:
 
 def collate_fn(examples):
     pixel_values = torch.stack([example["pixel_values"] for example in examples])
-    labels = torch.tensor([example["labels"] for example in examples])
+    labels = torch.tensor([example["label"] for example in examples])
     return {"pixel_values": pixel_values, "labels": labels}
 
 
@@ -167,7 +167,6 @@ def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
-
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
@@ -186,7 +185,8 @@ def main():
         datefmt="%m/%d/%Y %H:%M:%S",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-
+    hf_token = os.getenv("HUGGINGFACE_TOKEN")
+    login(token=hf_token) # logging to hugging-face cli in order to load dataset
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
     transformers.utils.logging.set_verbosity(log_level)
@@ -225,9 +225,11 @@ def main():
             data_args.dataset_name,
             data_args.dataset_config_name,
             cache_dir=model_args.cache_dir,
-            task="image-classification",
+            task="deprecated",
+            # task="image-classification",
             ignore_verifications=True,
-            use_auth_token=True if model_args.use_auth_token else None,
+            use_auth_token=True,
+            # use_auth_token=True if model_args.use_auth_token else None,
         )
     else:
         data_files = {}
@@ -248,10 +250,10 @@ def main():
         split = dataset["train"].train_test_split(data_args.train_val_split)
         dataset["train"] = split["train"]
         dataset["validation"] = split["test"]
-
+    print(dataset["train"].features.keys())
     # Prepare label mappings.
     # We'll include these in the model's config to get human readable labels in the Inference API.
-    labels = dataset["train"].features["labels"].names
+    labels = dataset["train"].features["label"].names
     label2id, id2label = dict(), dict()
     for i, label in enumerate(labels):
         label2id[label] = str(i)
@@ -344,7 +346,6 @@ def main():
             )
         # Set the training transforms
         dataset["train"].set_transform(train_transforms)
-
     if training_args.do_eval:
         if "validation" not in dataset:
             raise ValueError("--do_eval requires a validation dataset")

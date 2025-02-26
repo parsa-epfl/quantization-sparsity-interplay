@@ -16,13 +16,12 @@ epochs=3
 
 benchmark=imagenet-1k
 model='google/vit-base-patch16-224'
+optim=adamw_hf
 
 if [ $sparsity_num_format == bfp ]; then
 	blocksize=64
-	optim=BFPAdam
 else
 	blocksize=32
-	optim=adamw_hf
 fi
 
 filename=vit\_eval\_chkpt
@@ -62,12 +61,11 @@ python3 run_image_classification.py  \
    --use_auth_token=True \
    --overwrite_output_dir \
    --remove_unused_columns False  \
-   --do_train \
    --num_train_epochs $epochs \
    --do_eval  \
    --learning_rate 5e-5  \
    --per_device_train_batch_size 8  \
-   --per_device_eval_batch_size 8  \
+   --per_device_eval_batch_size 16  \
    --logging_strategy steps  \
    --logging_steps 10  \
    --evaluation_strategy epoch  \
